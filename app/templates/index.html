@@ -71,11 +71,25 @@
                 <div class="card">
                     <div class="card-header">
                         <h2><i class="fas fa-info-circle"></i> 顧客情報詳細</h2>
+                        <div class="header-controls">
+                            <span class="voice-help-text">
+                                <i class="fas fa-microphone"></i> 
+                                Windows音声認識（Win+H）で入力可能
+                            </span>
+                            <button id="format-text-btn" class="btn btn-secondary">
+                                <i class="fas fa-magic"></i> テキストを整形
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="form-group">
                             <label for="customer-details">顧客情報詳細</label>
-                            <textarea id="customer-details" name="customer-details" rows="6" placeholder="年齢、家族構成、趣味・ライフスタイル、現在の車、不満点、重視する点などを入力してください"></textarea>
+                            <textarea id="customer-details" name="customer-details" rows="6" 
+                                placeholder="年齢、家族構成、趣味・ライフスタイル、現在の車、不満点、重視する点などを入力してください。Windows音声認識（Win+H）も利用できます。"></textarea>
+                            <!-- 整形処理中の状態表示 -->
+                            <div id="format-status" class="format-status hidden">
+                                <i class="fas fa-sync fa-spin"></i> テキストを整形中...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -436,6 +450,16 @@
                                     </button>
                                 </div>
                                 <div class="form-text">セールストーク生成APIにアクセスするためのAPIキーです</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="api-key-text-format">テキスト整形用APIキー</label>
+                                <div class="password-input">
+                                    <input type="password" id="api-key-text-format" value="">
+                                    <button type="button" class="toggle-password-btn" data-target="api-key-text-format">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">音声認識テキストの構造化・整形に使用するAPIキーです</div>
                             </div>
                         </div>
 

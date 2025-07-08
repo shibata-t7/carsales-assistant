@@ -59,6 +59,7 @@ class ApiSettings(db.Model):
     proposal_api_key = db.Column(db.String(255))
     qa_api_key = db.Column(db.String(255))
     salestalk_api_key = db.Column(db.String(255))
+    text_format_api_key = db.Column(db.String(255))
     last_tested = db.Column(db.DateTime)
     is_connected = db.Column(db.Boolean, default=False)
 
@@ -145,6 +146,7 @@ def get_api_settings():
             'proposal_api_key': '',
             'qa_api_key': '',
             'salestalk_api_key': '',
+            'text_format_api_key': '',
             'is_connected': False,
             'read_only': not current_user.is_admin()
         })
@@ -154,6 +156,7 @@ def get_api_settings():
         'proposal_api_key': settings.proposal_api_key,
         'qa_api_key': settings.qa_api_key,
         'salestalk_api_key': settings.salestalk_api_key,
+        'text_format_api_key': settings.text_format_api_key,
         'is_connected': settings.is_connected,
         'read_only': not current_user.is_admin()
     })
@@ -175,11 +178,32 @@ def save_api_settings():
     settings.proposal_api_key = data.get('proposal_api_key')
     settings.qa_api_key = data.get('qa_api_key')
     settings.salestalk_api_key = data.get('salestalk_api_key')
+    settings.text_format_api_key = data.get('text_format_api_key')
     
     db.session.add(settings)
     db.session.commit()
     
     return jsonify({'status': 'success'})
+
+# デバッグ用：ユーザー状態確認エンドポイント
+@app.route('/api/debug/user-status', methods=['GET'])
+def debug_user_status():
+    """
+    現在のユーザーのログイン状態と権限を確認するためのデバッグエンドポイント
+    """
+    if current_user.is_authenticated:
+        return jsonify({
+            'authenticated': True,
+            'user_id': current_user.id,
+            'username': current_user.username,
+            'role': current_user.role,
+            'is_admin': current_user.is_admin()
+        })
+    else:
+        return jsonify({
+            'authenticated': False,
+            'message': 'ユーザーがログインしていません'
+        })
 
 # ルート：API接続テスト
 @app.route('/api/test-connection', methods=['POST'])
@@ -191,30 +215,51 @@ def test_api_connection():
     if not settings:
         return jsonify({'status': 'error', 'message': 'API設定が見つかりません'})
     
-    # Dify API /info エンドポイントに接続テスト
-    try:
-        base_url = settings.api_endpoint
-        headers = {
-            "Authorization": f"Bearer {settings.proposal_api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        response = requests.get(f"{base_url}/info", headers=headers)
-        
-        if response.status_code == 200:
-            settings.is_connected = True
-            settings.last_tested = datetime.utcnow()
-            db.session.commit()
-            return jsonify({'status': 'success'})
-        else:
-            settings.is_connected = False
-            db.session.commit()
-            return jsonify({'status': 'error', 'message': f'API接続エラー: {response.status_code}'})
+    base_url = settings.api_endpoint
+    test_results = {}
+    overall_success = True
     
-    except Exception as e:
-        settings.is_connected = False
-        db.session.commit()
-        return jsonify({'status': 'error', 'message': f'API接続例外: {str(e)}'})
+    # 各APIキーをテスト
+    api_keys = {
+        'proposal': settings.proposal_api_key,
+        'qa': settings.qa_api_key,
+        'salestalk': settings.salestalk_api_key,
+        'text_format': settings.text_format_api_key
+    }
+    
+    for api_name, api_key in api_keys.items():
+        if api_key:  # APIキーが設定されている場合のみテスト
+            try:
+                headers = {
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                }
+                
+                response = requests.get(f"{base_url}/info", headers=headers, timeout=10)
+                
+                if response.status_code == 200:
+                    test_results[api_name] = {'status': 'success', 'message': '接続成功'}
+                else:
+                    test_results[api_name] = {'status': 'error', 'message': f'HTTP {response.status_code}'}
+                    overall_success = False
+                    
+            except Exception as e:
+                test_results[api_name] = {'status': 'error', 'message': f'接続例外: {str(e)}'}
+                overall_success = False
+        else:
+            test_results[api_name] = {'status': 'skipped', 'message': 'APIキー未設定'}
+    
+    # 全体の接続状態を更新
+    settings.is_connected = overall_success
+    settings.last_tested = datetime.utcnow()
+    db.session.commit()
+    
+    return jsonify({
+        'status': 'success' if overall_success else 'partial',
+        'overall_connected': overall_success,
+        'test_results': test_results,
+        'message': '接続テスト完了' if overall_success else '一部のAPIキーで接続に失敗しました'
+    })
 
 # ルート：提案内容生成
 @app.route('/api/generate-proposal', methods=['POST'])
@@ -297,6 +342,97 @@ def generate_proposal():
         except json.JSONDecodeError:
             # JSONでない場合は、テキストをそのまま返す
             return jsonify({'status': 'error', 'message': 'レスポンスの形式が正しくありません', 'raw_response': text_output})
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': f'API呼び出し例外: {str(e)}'})
+
+# ルート：テキスト整形
+@app.route('/api/format-text', methods=['POST'])
+@login_required
+def format_customer_text():
+    data = request.get_json()
+    
+    settings = get_active_api_settings()
+    
+    if not settings or not settings.is_connected:
+        return jsonify({'status': 'error', 'message': 'API接続が設定されていないか、接続テストに失敗しています'})
+    
+    if not settings.text_format_api_key:
+        return jsonify({'status': 'error', 'message': 'テキスト整形APIキーが設定されていません'})
+    
+    raw_text = data.get('raw_text', '').strip()
+    if not raw_text:
+        return jsonify({'status': 'error', 'message': '整形するテキストが入力されていません'})
+    
+    # テキストサイズを確認してAPIの制限内に収まるようにする
+    if len(raw_text) > 45000:  # 50000文字の制限に余裕を持たせる
+        raw_text = raw_text[:45000]
+    
+    # Dify APIに送信するデータ
+    format_data = {
+        'raw_text': raw_text
+    }
+    
+    dify_data = {
+        'inputs': {
+            'input': json.dumps(format_data)
+        },
+        'response_mode': 'streaming',
+        'user': f"text-format-user-{current_user.id}"
+    }
+    
+    base_url = settings.api_endpoint
+    headers = {
+        "Authorization": f"Bearer {settings.text_format_api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(f"{base_url}/workflows/run", headers=headers, json=dify_data, stream=True)
+        
+        if response.status_code != 200:
+            return jsonify({'status': 'error', 'message': f'API呼び出しエラー: {response.status_code}'})
+        
+        # ストリームからの最終レスポンスを取得
+        final_output = {}
+        for line in response.iter_lines():
+            if line:
+                line_text = line.decode('utf-8')
+                if line_text.startswith("data: "):
+                    json_str = line_text[6:]
+                    try:
+                        event_data = json.loads(json_str)
+                        event_type = event_data.get("event")
+                        
+                        if event_type == "workflow_finished":
+                            final_output = event_data.get("data", {}).get("outputs", {})
+                            break
+                    except json.JSONDecodeError:
+                        continue
+        
+        if not final_output:
+            return jsonify({'status': 'error', 'message': 'API処理中にエラーが発生しました'})
+        
+        text_output = final_output.get("text", "")
+        
+        try:
+            # テキスト出力がJSON文字列の場合、パースする
+            if isinstance(text_output, str) and text_output.startswith('{'):
+                content = json.loads(text_output)
+                # contentがdictで、textキーがある場合はその中身を取得
+                if isinstance(content, dict) and "text" in content:
+                    formatted_text = content["text"]
+                else:
+                    formatted_text = text_output
+            else:
+                # JSONでない場合は、テキストをそのまま返す
+                formatted_text = text_output
+            
+            return jsonify({'status': 'success', 'formatted_text': formatted_text})
+            
+        except json.JSONDecodeError:
+            # JSONパースに失敗した場合は、テキストをそのまま返す
+            return jsonify({'status': 'success', 'formatted_text': text_output})
             
     except Exception as e:
         return jsonify({'status': 'error', 'message': f'API呼び出し例外: {str(e)}'})

@@ -237,6 +237,12 @@ function setupEventListeners() {
     if (copyProposalBtn) {
         copyProposalBtn.addEventListener('click', copyProposalAsMarkdown);
     }
+    
+    // テキスト整形ボタン
+    const formatTextBtn = document.getElementById('format-text-btn');
+    if (formatTextBtn) {
+        formatTextBtn.addEventListener('click', handleFormatText);
+    }
 }
 
 /**
@@ -382,16 +388,34 @@ function loadApiSettings() {
     fetch('/api/settings')
         .then(response => response.json())
         .then(data => {
-            document.getElementById('api-endpoint').value = data.api_endpoint;
-            document.getElementById('api-key-proposal').value = data.proposal_api_key;
-            document.getElementById('api-key-qa').value = data.qa_api_key;
-            document.getElementById('api-key-salestalk').value = data.salestalk_api_key;
+            if (data.api_endpoint) {
+                document.getElementById('api-endpoint').value = data.api_endpoint;
+            }
+            if (data.proposal_api_key) {
+                document.getElementById('api-key-proposal').value = data.proposal_api_key;
+            }
+            if (data.qa_api_key) {
+                document.getElementById('api-key-qa').value = data.qa_api_key;
+            }
+            if (data.salestalk_api_key) {
+                document.getElementById('api-key-salestalk').value = data.salestalk_api_key;
+            }
+            if (data.text_format_api_key) {
+                document.getElementById('api-key-text-format').value = data.text_format_api_key;
+            }
             
             updateConnectionStatus(data.is_connected);
+            
+            // 一般ユーザーの場合は入力フィールドを無効化
+            if (data.read_only) {
+                const inputs = document.querySelectorAll('#api-settings-form input');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                });
+            }
         })
         .catch(error => {
-            console.error('設定の読み込みに失敗しました', error);
-            showNotification('API設定の読み込みに失敗しました', 'error');
+            console.error('API設定の読み込みに失敗:', error);
         });
 }
 
@@ -425,16 +449,12 @@ function updateConnectionStatus(isConnected) {
  * API設定を保存する
  */
 function handleSaveApiSettings() {
-    const apiEndpoint = document.getElementById('api-endpoint').value;
-    const proposalApiKey = document.getElementById('api-key-proposal').value;
-    const qaApiKey = document.getElementById('api-key-qa').value;
-    const salestalkApiKey = document.getElementById('api-key-salestalk').value;
-    
-    const data = {
-        api_endpoint: apiEndpoint,
-        proposal_api_key: proposalApiKey,
-        qa_api_key: qaApiKey,
-        salestalk_api_key: salestalkApiKey
+    const apiData = {
+        api_endpoint: document.getElementById('api-endpoint').value,
+        proposal_api_key: document.getElementById('api-key-proposal').value,
+        qa_api_key: document.getElementById('api-key-qa').value,
+        salestalk_api_key: document.getElementById('api-key-salestalk').value,
+        text_format_api_key: document.getElementById('api-key-text-format').value
     };
     
     fetch('/api/settings', {
@@ -442,7 +462,7 @@ function handleSaveApiSettings() {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(apiData)
     })
     .then(response => response.json())
     .then(data => {
@@ -453,8 +473,8 @@ function handleSaveApiSettings() {
         }
     })
     .catch(error => {
-        console.error('API設定の保存に失敗しました', error);
-        showNotification('API設定の保存に失敗しました', 'error');
+        console.error('API設定の保存エラー:', error);
+        showNotification('API設定の保存中にエラーが発生しました', 'error');
     });
 }
 
@@ -1379,4 +1399,66 @@ function copyProposalAsMarkdown() {
             console.error('クリップボードへのコピーに失敗しました', err);
             showNotification('コピーに失敗しました', 'error');
         });
+}
+
+/**
+ * テキスト整形処理
+ */
+function handleFormatText() {
+    const textArea = document.getElementById('customer-details');
+    const rawText = textArea.value.trim();
+    
+    if (!rawText) {
+        showNotification('整形するテキストを入力してください', 'warning');
+        return;
+    }
+    
+    // 処理中の状態表示
+    showFormatting(true);
+    
+    fetch('/api/format-text', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            raw_text: rawText
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            textArea.value = data.formatted_text;
+            showNotification('テキストを整形しました', 'success');
+        } else {
+            showNotification(`整形エラー: ${data.message}`, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('テキスト整形エラー:', error);
+        showNotification('整形処理中にエラーが発生しました', 'error');
+    })
+    .finally(() => {
+        // 処理完了後の状態復元
+        showFormatting(false);
+    });
+}
+
+/**
+ * テキスト整形の処理状態表示
+ * @param {boolean} show - 表示するかどうか
+ */
+function showFormatting(show) {
+    const statusDiv = document.getElementById('format-status');
+    const formatBtn = document.getElementById('format-text-btn');
+    
+    if (show) {
+        statusDiv.classList.remove('hidden');
+        formatBtn.disabled = true;
+        formatBtn.innerHTML = '<i class="fas fa-sync fa-spin"></i> 整形中...';
+    } else {
+        statusDiv.classList.add('hidden');
+        formatBtn.disabled = false;
+        formatBtn.innerHTML = '<i class="fas fa-magic"></i> テキストを整形';
+    }
 } 

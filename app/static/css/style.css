@@ -512,24 +512,61 @@ textarea {
 }
 
 .card-header {
-    padding: var(--spacing-m) var(--spacing-l);
-    background-color: var(--gray-100);
-    border-bottom: var(--border-width) solid var(--gray-200);
+    padding: var(--spacing-l);
+    background-color: var(--white);
+    border-bottom: var(--border-width) solid var(--gray-300);
+    border-top-left-radius: var(--border-radius-large);
+    border-top-right-radius: var(--border-radius-large);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
 .card-header h2 {
-    margin-bottom: 0;
-    font-size: var(--font-size-large);
+    margin: 0;
     color: var(--toyota-dark-blue);
-    display: flex;
-    align-items: center;
+    font-size: var(--font-size-large);
+    font-weight: 700;
 }
 
 .card-header h2 i {
     margin-right: var(--spacing-s);
+    color: var(--toyota-red);
+}
+
+/* ヘッダーコントロール */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-l);
+}
+
+.voice-help-text {
+    color: var(--gray-600);
+    font-size: var(--font-size-small);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.voice-help-text i {
+    color: var(--toyota-red);
+}
+
+/* テキスト整形状態表示 */
+.format-status {
+    margin-top: var(--spacing-s);
+    padding: var(--spacing-s) var(--spacing-m);
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius-small);
+    color: var(--gray-700);
+    font-size: var(--font-size-small);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+}
+
+.format-status i {
     color: var(--toyota-red);
 }
 
