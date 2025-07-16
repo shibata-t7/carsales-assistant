@@ -575,13 +575,30 @@ function handleGenerateProposal() {
 }
 
 /**
+ * HTMLエスケープ関数
+ * @param {string} text - エスケープするテキスト
+ * @returns {string} エスケープされたテキスト
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * 顧客情報サマリーを更新する
  */
 function updateCustomerSummary() {
     if (!currentCustomerData) return;
     
     document.getElementById('summary-name').textContent = currentCustomerData.customer_name;
-    document.getElementById('summary-details').textContent = currentCustomerData.customer_details;
+    
+    // 顧客情報詳細の改行・スペースを保持するため、HTMLエスケープしてから改行をbrタグに変換
+    const customerDetails = escapeHtml(currentCustomerData.customer_details);
+    const formattedDetails = customerDetails.replace(/\n/g, '<br>');
+    document.getElementById('summary-details').innerHTML = formattedDetails;
 }
 
 /**
