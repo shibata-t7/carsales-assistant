@@ -1035,9 +1035,19 @@ function loadHistoryData(page) {
 function displayHistoryData(data) {
     const tableBody = document.getElementById('history-table-body');
     const pagination = document.getElementById('history-pagination');
+    const countElement = document.getElementById('history-count');
     
     // テーブルの内容をクリア
     tableBody.innerHTML = '';
+    
+    // 件数表示の更新
+    if (data.total === 0) {
+        countElement.textContent = '該当する履歴がありません';
+    } else {
+        const startIndex = ((data.current_page - 1) * 10) + 1;
+        const endIndex = Math.min(data.current_page * 10, data.total);
+        countElement.textContent = `全${data.total}件中 ${startIndex}-${endIndex}件を表示`;
+    }
     
     // データがない場合
     if (!data.items || data.items.length === 0) {

@@ -13,9 +13,6 @@
     <!-- ログイン画面 -->
     <div id="login-container" class="auth-container">
         <div class="login-form">
-            <div class="logo-container">
-                <img src="{{ url_for('static', filename='images/toyota-logo.jpg') }}" alt="トヨタロゴ" class="logo">
-            </div>
             <h1>トヨタセールスAIアシスタント</h1>
             {% if error %}
             <div class="error-message">
@@ -33,7 +30,6 @@
                 </div>
                 <button type="submit" class="btn btn-primary">ログイン</button>
             </form>
-            <p class="login-note">※デモアカウント: ユーザー名「demo」、パスワード「demo」</p>
         </div>
     </div>
 </body>

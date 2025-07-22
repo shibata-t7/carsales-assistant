@@ -326,6 +326,7 @@
                                 <label for="history-period">期間</label>
                                 <select id="history-period">
                                     <option value="all">すべての期間</option>
+                                    <option value="today">今日</option>
                                     <option value="week">過去1週間</option>
                                     <option value="month">過去1ヶ月</option>
                                     <option value="quarter">過去3ヶ月</option>
@@ -346,6 +347,10 @@
                         <h2><i class="fas fa-history"></i> 履歴一覧</h2>
                     </div>
                     <div class="card-body">
+                        <!-- 件数表示エリア -->
+                        <div class="history-summary">
+                            <span id="history-count">全0件中 0-0件を表示</span>
+                        </div>
                         <div class="history-table-container">
                             <table class="history-table">
                                 <thead>

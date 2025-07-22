@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 import json
 import requests
@@ -83,6 +83,28 @@ def to_jst(utc_dt):
         utc_dt = pytz.UTC.localize(utc_dt)
     jst = pytz.timezone('Asia/Tokyo')
     return utc_dt.astimezone(jst)
+
+# 期間フィルター計算用関数
+def get_date_filter(period):
+    """期間フィルターに基づいて開始日時を計算する（UTC）"""
+    jst = pytz.timezone('Asia/Tokyo')
+    now_jst = datetime.now(jst)
+    
+    if period == 'today':
+        # 今日の0時0分0秒から
+        start_of_day = now_jst.replace(hour=0, minute=0, second=0, microsecond=0)
+        return start_of_day.astimezone(pytz.UTC)
+    elif period == 'week':
+        # 7日前から
+        return (now_jst - timedelta(days=7)).astimezone(pytz.UTC)
+    elif period == 'month':
+        # 30日前から
+        return (now_jst - timedelta(days=30)).astimezone(pytz.UTC)
+    elif period == 'quarter':
+        # 90日前から
+        return (now_jst - timedelta(days=90)).astimezone(pytz.UTC)
+    
+    return None
 
 # API設定取得用共通関数
 def get_active_api_settings():
@@ -769,18 +791,9 @@ def get_history():
         query = query.filter(History.customer_name.like(f'%{customer_name}%'))
     
     if period != 'all':
-        now = datetime.utcnow()
-        if period == 'week':
-            # 1週間以内
-            from_date = now.replace(day=now.day-7)
-        elif period == 'month':
-            # 1ヶ月以内
-            from_date = now.replace(month=now.month-1)
-        elif period == 'quarter':
-            # 3ヶ月以内
-            from_date = now.replace(month=now.month-3)
-        
-        query = query.filter(History.created_at >= from_date)
+        from_date = get_date_filter(period)
+        if from_date:
+            query = query.filter(History.created_at >= from_date)
     
     pagination = query.order_by(History.created_at.desc()).paginate(page=page, per_page=per_page)
     
@@ -864,18 +877,9 @@ def export_history():
         query = query.filter(History.customer_name.like(f'%{customer_name}%'))
     
     if period != 'all':
-        now = datetime.utcnow()
-        if period == 'week':
-            # 1週間以内
-            from_date = now.replace(day=now.day-7)
-        elif period == 'month':
-            # 1ヶ月以内
-            from_date = now.replace(month=now.month-1)
-        elif period == 'quarter':
-            # 3ヶ月以内
-            from_date = now.replace(month=now.month-3)
-        
-        query = query.filter(History.created_at >= from_date)
+        from_date = get_date_filter(period)
+        if from_date:
+            query = query.filter(History.created_at >= from_date)
     
     # CSVの生成
     si = StringIO()
