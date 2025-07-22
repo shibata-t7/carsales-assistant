@@ -10,6 +10,7 @@ import secrets
 import csv
 from io import StringIO
 from functools import wraps
+import pytz
 
 # アプリケーションの設定
 app = Flask(__name__, 
@@ -51,6 +52,9 @@ class History(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     car_model = db.Column(db.String(100))
     sales_talk = db.Column(db.Text)
+    
+    # ユーザー情報への関係
+    user = db.relationship('User', backref='histories')
 
 class ApiSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -71,6 +75,14 @@ def admin_required(f):
             return jsonify({'error': 'Admin access required'}), 403
         return f(*args, **kwargs)
     return decorated_function
+
+# 日本時間変換用関数
+def to_jst(utc_dt):
+    """UTC時間を日本時間に変換する"""
+    if utc_dt.tzinfo is None:
+        utc_dt = pytz.UTC.localize(utc_dt)
+    jst = pytz.timezone('Asia/Tokyo')
+    return utc_dt.astimezone(jst)
 
 # API設定取得用共通関数
 def get_active_api_settings():
@@ -747,7 +759,11 @@ def get_history():
     customer_name = request.args.get('customer_name', '')
     period = request.args.get('period', 'all')
     
-    query = History.query.filter_by(user_id=current_user.id)
+    # 管理者は全ユーザーの履歴を参照可能、一般ユーザーは自分の履歴のみ
+    if current_user.is_admin():
+        query = History.query.join(User, History.user_id == User.id)
+    else:
+        query = History.query.join(User, History.user_id == User.id).filter(History.user_id == current_user.id)
     
     if customer_name:
         query = query.filter(History.customer_name.like(f'%{customer_name}%'))
@@ -775,7 +791,8 @@ def get_history():
             'customer_name': item.customer_name,
             'customer_type': item.customer_type,
             'car_model': item.car_model,
-            'created_at': item.created_at.strftime('%Y/%m/%d')
+            'username': item.user.username,
+            'created_at': to_jst(item.created_at).strftime('%Y/%m/%d %H:%M:%S')
         })
     
     return jsonify({
@@ -789,7 +806,11 @@ def get_history():
 @app.route('/api/history/<int:history_id>', methods=['GET'])
 @login_required
 def get_history_detail(history_id):
-    history = History.query.filter_by(id=history_id, user_id=current_user.id).first()
+    # 管理者は全履歴にアクセス可能、一般ユーザーは自分の履歴のみ
+    if current_user.is_admin():
+        history = History.query.options(db.joinedload(History.user)).filter_by(id=history_id).first()
+    else:
+        history = History.query.options(db.joinedload(History.user)).filter_by(id=history_id, user_id=current_user.id).first()
     
     if not history:
         return jsonify({'status': 'error', 'message': '履歴が見つかりません'})
@@ -803,14 +824,19 @@ def get_history_detail(history_id):
         'proposal': json.loads(history.proposal_data),
         'car_model': history.car_model,
         'sales_talk': history.sales_talk,
-        'created_at': history.created_at.strftime('%Y/%m/%d %H:%M')
+        'username': history.user.username,
+        'created_at': to_jst(history.created_at).strftime('%Y/%m/%d %H:%M:%S')
     })
 
 # ルート：履歴削除
 @app.route('/api/history/<int:history_id>', methods=['DELETE'])
 @login_required
 def delete_history(history_id):
-    history = History.query.filter_by(id=history_id, user_id=current_user.id).first()
+    # 管理者は全履歴を削除可能、一般ユーザーは自分の履歴のみ
+    if current_user.is_admin():
+        history = History.query.filter_by(id=history_id).first()
+    else:
+        history = History.query.filter_by(id=history_id, user_id=current_user.id).first()
     
     if not history:
         return jsonify({'status': 'error', 'message': '履歴が見つかりません'})
@@ -828,7 +854,11 @@ def export_history():
     customer_name = request.args.get('customer_name', '')
     period = request.args.get('period', 'all')
     
-    query = History.query.filter_by(user_id=current_user.id)
+    # 管理者は全ユーザーの履歴をエクスポート可能、一般ユーザーは自分の履歴のみ
+    if current_user.is_admin():
+        query = History.query.join(User, History.user_id == User.id)
+    else:
+        query = History.query.join(User, History.user_id == User.id).filter(History.user_id == current_user.id)
     
     if customer_name:
         query = query.filter(History.customer_name.like(f'%{customer_name}%'))
@@ -851,13 +881,14 @@ def export_history():
     si = StringIO()
     cw = csv.writer(si)
     
-    # ヘッダー
-    cw.writerow(['日時', '顧客名', '顧客タイプ', '車種', '詳細'])
+    # ヘッダー（ユーザー名を追加）
+    cw.writerow(['日時', 'ユーザー名', '顧客名', '顧客タイプ', '車種', '詳細'])
     
     # データ
     for item in query.order_by(History.created_at.desc()).all():
         cw.writerow([
-            item.created_at.strftime('%Y/%m/%d %H:%M'),
+            to_jst(item.created_at).strftime('%Y/%m/%d %H:%M:%S'),
+            item.user.username,
             item.customer_name,
             item.customer_type,
             item.car_model,

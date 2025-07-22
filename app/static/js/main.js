@@ -1056,9 +1056,9 @@ function displayHistoryData(data) {
         
         row.innerHTML = `
             <td>${item.created_at}</td>
+            <td>${item.username}</td>
             <td>${item.customer_name}</td>
             <td>${item.car_model || '-'}</td>
-            <td>${item.customer_type}</td>
             <td>
                 <button class="btn btn-icon view-detail-btn" data-id="${item.id}" title="詳細表示">
                     <i class="fas fa-eye"></i>

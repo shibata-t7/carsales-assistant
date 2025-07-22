@@ -8,7 +8,7 @@
 - **質問応答**: 顧客や営業担当者からの質問に対する回答生成
 - **セールストーク**: 提案内容をもとにした効果的なセールストークの生成
 - **テキスト整形**: Windows 11音声認識機能（Win+H）と連携した顧客情報の自動構造化・整形
-- **商談履歴管理**: 過去の商談内容の保存・参照・CSV出力
+- **商談履歴管理**: 過去の商談内容の保存・参照・CSV出力、管理者による全ユーザー履歴管理
 - **API設定管理**: 外部AIサービス（Dify）との連携設定
 - **ユーザー権限管理**: 管理者・一般ユーザーによる権限ベースのアクセス制御
 
@@ -36,6 +36,7 @@ prototype/
 - **ORM**: SQLAlchemy 2.0.27
 - **外部API**: Dify AI Platform
 - **音声入力**: Windows 11音声認識機能（Win+H）
+- **タイムゾーン処理**: pytz 2024.1
 
 ## 構築手順
 
@@ -209,13 +210,100 @@ EC2インスタンスのパブリックIPアドレスにブラウザでアクセ
 
 ## ユーザー権限管理
 
+### ユーザー管理コマンド
+
+#### 既存ユーザー一覧表示
+
+```bash
+cd app
+python -c "
+from app import app, db, User
+with app.app_context():
+    users = User.query.all()
+    for user in users:
+        print(f'ID: {user.id}, ユーザー名: {user.username}, 権限: {user.role}')
+"
+```
+
+#### 新規ユーザー追加
+
+```bash
+cd app
+python -c "
+from app import app, db, User
+with app.app_context():
+    new_user = User(username='新しいユーザー名', password='パスワード', role='user')
+    db.session.add(new_user)
+    db.session.commit()
+    print('ユーザーが追加されました')
+"
+```
+
+#### ユーザー削除
+
+```bash
+cd app
+python -c "
+from app import app, db, User
+with app.app_context():
+    user = User.query.filter_by(username='削除するユーザー名').first()
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+        print('ユーザーが削除されました')
+    else:
+        print('ユーザーが見つかりません')
+"
+```
+
+#### ユーザー情報変更
+
+**パスワード変更**:
+```bash
+cd app
+python -c "
+from app import app, db, User
+with app.app_context():
+    user = User.query.filter_by(username='ユーザー名').first()
+    if user:
+        user.password = '新しいパスワード'
+        db.session.commit()
+        print('パスワードが変更されました')
+    else:
+        print('ユーザーが見つかりません')
+"
+```
+
+**権限変更（一般ユーザー ⇔ 管理者）**:
+```bash
+cd app
+python -c "
+from app import app, db, User
+with app.app_context():
+    user = User.query.filter_by(username='ユーザー名').first()
+    if user:
+        user.role = 'admin'  # または 'user'
+        db.session.commit()
+        print('権限が変更されました')
+    else:
+        print('ユーザーが見つかりません')
+"
+```
+
+#### 注意事項
+
+- パスワードは平文で保存されます（PoC用途のため）
+- ユーザー削除は取り消せないので注意してください
+- adminユーザーは削除しないことを推奨します
+- 権限は 'user'（一般ユーザー）または 'admin'（管理者）のみ指定可能
+
 ### ユーザー種別
 
 #### 管理者ユーザー (role: 'admin')
 - **API設定**: 設定の参照・変更・保存が可能
 - **設定画面**: 歯車アイコンが表示され、設定モーダルにアクセス可能
 - **AI機能**: 自分の設定したAPI設定を使用してAI機能を利用
-- **履歴管理**: 自分の商談履歴を管理
+- **履歴管理**: 全ユーザーの商談履歴を参照・削除・エクスポート可能
 
 #### 一般ユーザー (role: 'user')
 - **API設定**: 管理者が設定したAPI設定を自動的に参照（変更不可）
@@ -261,7 +349,8 @@ EC2インスタンスのパブリックIPアドレスにブラウザでアクセ
 - proposal_data: 提案データ（JSON）
 - car_model: 推奨車種
 - sales_talk: セールストーク
-- created_at: 作成日時
+- created_at: 作成日時（UTC、表示時は日本時間に変換）
+- user: Userテーブルとのリレーション（ユーザー名表示用）
 
 ## API仕様
 
