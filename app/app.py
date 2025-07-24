@@ -931,8 +931,15 @@ if __name__ == '__main__':
             else:
                 print("Admin user already exists")
         
-        print("Starting Flask app on port 5001...")
-        app.run(debug=True, host='127.0.0.1', port=5001)
+        # OS自動判定による環境設定
+        import platform
+        is_windows = platform.system() == 'Windows'
+        HOST = '127.0.0.1' if is_windows else '0.0.0.0'
+        DEBUG = is_windows
+        PORT = 5001 if is_windows else 80
+        
+        print(f"Starting Flask app on {HOST}:{PORT}...")
+        app.run(debug=DEBUG, host=HOST, port=PORT)
     except Exception as e:
         print(f"Error starting application: {e}")
         import traceback

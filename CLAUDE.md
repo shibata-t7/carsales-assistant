@@ -2,26 +2,45 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Overview
 
-This is a Toyota Sales AI Assistant - a Flask-based web application that provides AI-powered sales support for Toyota car dealerships. The application integrates with the Dify AI Platform to generate vehicle recommendations, answer sales questions, and create sales conversations.
+This is a Toyota Sales AI Assistant - a Flask-based web application that helps car sales staff generate vehicle proposals, sales talk, and answer customer questions using AI. The application integrates with the Dify AI platform and supports Windows 11 voice recognition for efficient customer information input.
 
-## Technology Stack
+## Architecture
 
-- **Backend**: Python 3.9+ with Flask 3.0.0
-- **Database**: SQLite with SQLAlchemy 2.0.27 ORM
-- **Frontend**: HTML5, CSS3, Vanilla JavaScript (no build process)
-- **Authentication**: Flask-Login session management with role-based access control
-- **External API**: Dify AI Platform integration
+- **Backend**: Flask 3.0.0 Python web application (app/app.py)
+- **Frontend**: HTML5, CSS3, Vanilla JavaScript (static/ directory)
+- **Database**: SQLite with SQLAlchemy ORM
+- **Authentication**: Flask-Login with role-based access control
+- **External API**: Dify AI Platform integration for AI features
+- **Voice Input**: Windows 11 voice recognition (Win+H) integration
 
-## Common Development Commands
+## Key Components
 
-### Setup and Initialization
+### Database Models (app/app.py:34-64)
+- **User**: Authentication with role-based access (admin/user)
+- **History**: Sales interaction records
+- **ApiSettings**: Dify API configuration per user
+
+### API Endpoints
+- Authentication: `/login`, `/logout`
+- API Configuration: `/api/settings` (GET/POST), `/api/test-connection`
+- AI Features: `/api/generate-proposal`, `/api/ask-question`, `/api/generate-salestalk`, `/api/format-text`
+- History: `/api/get-history`, `/api/save-history`, `/api/export-history`
+
+### Permission System
+- **Admin users**: Can configure API settings, access all features
+- **Regular users**: Use admin-configured API settings, access AI features
+- Permission decorator: `@admin_required` (app/app.py:67-73)
+
+## Development Commands
+
+### Setup and Run
 ```bash
 # Install dependencies
 pip install -r app/requirements.txt
 
-# Initialize database (run from app/ directory)
+# Initialize database
 cd app
 python -c "from app import app, db; app.app_context().push(); db.create_all()"
 
@@ -29,82 +48,40 @@ python -c "from app import app, db; app.app_context().push(); db.create_all()"
 python app.py
 ```
 
-### Testing
-```bash
-# Test API endpoints using sample scripts
-python doc/dify_recommendreq_sample.py    # Proposal generation
-python doc/dify_qa_sample.py              # Q&A functionality  
-python doc/dify_conversation_sample.py    # Sales conversation
+### Default Users
+- **Demo user**: username=demo, password=demo (regular user)
+- **Admin user**: username=admin, password=admin (admin user)
+
+### Testing API Integration
+Use the sample scripts in `doc/` directory:
+- `dify_recommendreq_sample.py` - Proposal generation API
+- `dify_qa_sample.py` - Q&A API
+- `dify_conversation_sample.py` - Conversation API
+
+## File Structure
+
+```
+app/
+├── app.py              # Main Flask application
+├── requirements.txt    # Python dependencies
+├── instance/           # SQLite database files
+├── static/            # CSS, JS, images
+└── templates/         # HTML templates
+
+design/                # Frontend design prototypes
+doc/                   # Documentation and API samples
 ```
 
-### Production Deployment
-```bash
-# Create systemd service (Linux)
-sudo systemctl start toyota-sales
-sudo systemctl enable toyota-sales
+## Important Notes
 
-# Check service logs
-sudo journalctl -u toyota-sales -f
-```
+- The app runs on port 5001 by default
+- API settings are shared from admin to regular users via `get_active_api_settings()` (app/app.py:76-93)
+- Text formatting feature designed for Windows 11 voice input integration
+- All API calls to Dify platform use streaming responses with JSON parsing
+- Database uses plain text passwords (suitable for PoC only)
 
-## Architecture
+## Common Issues
 
-### Application Structure
-- **app/app.py** (706 lines): Main Flask application with all routes, models, and business logic
-- **app/templates/index.html**: Single-page application frontend with tabbed navigation
-- **app/static/**: CSS, JavaScript, and image assets (no build process required)
-- **app/instance/**: SQLite database storage
-
-### Database Models
-- **User**: Authentication with role-based access control
-  - Admin user: admin/admin (can modify API settings)
-  - General user: demo/demo (uses admin's API settings)
-- **ApiSettings**: External API configuration (managed by admin, shared with general users)
-- **History**: Sales proposals and interaction history (per user)
-
-### Key API Endpoints
-- **Authentication**: `/login`, `/logout`
-- **API Management**: `/api/settings` (admin: modify, user: read-only), `/api/test-connection` (admin only)
-- **AI Features**: `/api/generate-proposal`, `/api/ask-question`, `/api/generate-salestalk`
-- **Data**: `/api/save-history`, `/api/get-history`, `/api/export-history`
-
-## External Integration
-
-The application integrates with Dify AI Platform at `http://54.92.0.96/v1` with specific API keys for:
-- Vehicle proposal generation
-- Sales Q&A functionality
-- Role-play sales conversation generation
-
-API keys are stored in the database and configured per user through the settings interface.
-
-## Development Notes
-
-### Authentication
-- **Admin user**: username `admin`, password `admin` (can modify API settings)
-- **General user**: username `demo`, password `demo` (uses admin's API settings)
-- Passwords are stored in plain text (development only - needs hashing for production)
-- Role-based access control implemented with `@admin_required` decorator
-
-### Frontend Architecture
-- Single-page application with JavaScript tab management
-- Server-sent events (SSE) for streaming AI responses
-- Form-based customer input with detailed vehicle recommendations
-- History management with search and CSV export functionality
-
-### Database
-- SQLite auto-initializes on first run
-- All database operations handled through SQLAlchemy ORM
-- History table stores JSON data for complex proposal structures
-
-### Security Considerations
-- Application is in prototype/PoC state
-- Production deployment requires password hashing, HTTPS, and security hardening
-- API keys are visible in HTML templates and need environment variable management
-
-## File Locations
-
-- Main application: `app/app.py`
-- Frontend template: `app/templates/index.html`
-- Dependencies: `app/requirements.txt`
-- Documentation: `doc/README.md` (Japanese)
-- Test scripts: `doc/dify_*_sample.py`
+- **API Connection Errors**: Check API endpoint URL and keys in settings
+- **Database Initialization**: Ensure `instance/` directory exists and has write permissions
+- **Voice Input**: Windows 11 voice recognition must be enabled for text formatting feature
