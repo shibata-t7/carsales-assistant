@@ -64,6 +64,8 @@ class ApiSettings(db.Model):
     qa_api_key = db.Column(db.String(255))
     salestalk_api_key = db.Column(db.String(255))
     text_format_api_key = db.Column(db.String(255))
+    customer_role_url = db.Column(db.String(500))
+    sales_role_url = db.Column(db.String(500))
     last_tested = db.Column(db.DateTime)
     is_connected = db.Column(db.Boolean, default=False)
 
@@ -181,6 +183,8 @@ def get_api_settings():
             'qa_api_key': '',
             'salestalk_api_key': '',
             'text_format_api_key': '',
+            'customer_role_url': '',
+            'sales_role_url': '',
             'is_connected': False,
             'read_only': not current_user.is_admin()
         })
@@ -191,6 +195,8 @@ def get_api_settings():
         'qa_api_key': settings.qa_api_key,
         'salestalk_api_key': settings.salestalk_api_key,
         'text_format_api_key': settings.text_format_api_key,
+        'customer_role_url': settings.customer_role_url or '',
+        'sales_role_url': settings.sales_role_url or '',
         'is_connected': settings.is_connected,
         'read_only': not current_user.is_admin()
     })
@@ -213,6 +219,8 @@ def save_api_settings():
     settings.qa_api_key = data.get('qa_api_key')
     settings.salestalk_api_key = data.get('salestalk_api_key')
     settings.text_format_api_key = data.get('text_format_api_key')
+    settings.customer_role_url = data.get('customer_role_url')
+    settings.sales_role_url = data.get('sales_role_url')
     
     db.session.add(settings)
     db.session.commit()

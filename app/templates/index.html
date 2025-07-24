@@ -117,6 +117,9 @@
                 <div class="card">
                     <div class="card-header">
                         <h2><i class="fas fa-user-check"></i> 顧客情報サマリー</h2>
+                        <button id="copy-customer-summary-btn" class="btn btn-text" title="顧客情報をコピー">
+                            <i class="fas fa-copy"></i> コピー
+                        </button>
                     </div>
                     <div class="card-body" id="customer-summary">
                         <div class="customer-summary-content">
@@ -289,11 +292,11 @@
                         <div class="roleplay-buttons">
                             <p>実際の商談に備えて練習ができます。セールス役と顧客役を選択してください。</p>
                             <div class="btn-group">
-                                <button id="sales-role-btn" class="btn btn-secondary">
-                                    <i class="fas fa-user-tie"></i> セールス役でプレイ
-                                </button>
                                 <button id="customer-role-btn" class="btn btn-secondary">
-                                    <i class="fas fa-user"></i> 顧客役でプレイ
+                                    <i class="fas fa-user"></i> 顧客役でプレイ（AIセールス）
+                                </button>
+                                <button id="sales-role-btn" class="btn btn-secondary">
+                                    <i class="fas fa-user-tie"></i> セールス役でプレイ（AI顧客）
                                 </button>
                             </div>
                         </div>
@@ -468,6 +471,20 @@
                         </div>
 
                         <div class="settings-section">
+                            <h3>ロールプレイURL設定</h3>
+                            <div class="form-group">
+                                <label for="customer-role-url-setting">顧客役URL（AIセールス）</label>
+                                <input type="text" id="customer-role-url-setting" placeholder="顧客役でプレイする際のチャットURL">
+                                <div class="form-text">顧客役でロールプレイを行う際のチャットページURLです</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="sales-role-url-setting">セールス役URL（AI顧客）</label>
+                                <input type="text" id="sales-role-url-setting" placeholder="セールス役でプレイする際のチャットURL">
+                                <div class="form-text">セールス役でロールプレイを行う際のチャットページURLです</div>
+                            </div>
+                        </div>
+
+                        <div class="settings-section">
                             <h3>接続ステータス</h3>
                             <div class="connection-status">
                                 <div id="connection-indicator" class="status-indicator">
@@ -542,8 +559,5 @@
         </button>
     </div>
 
-    <!-- ロールプレイURL設定 (隠し要素) -->
-    <input type="hidden" id="customer-role-url" value="http://54.92.0.96/chat/2o93rFsHgZ1whGey">
-    <input type="hidden" id="sales-role-url" value="http://54.92.0.96/chat/2jg8183mbPBWOd1b">
 </body>
 </html> 

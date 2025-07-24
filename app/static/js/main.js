@@ -110,18 +110,42 @@ function setupEventListeners() {
     // セールス役ロールプレイボタン
     const salesRoleBtn = document.getElementById('sales-role-btn');
     if (salesRoleBtn) {
-        salesRoleBtn.addEventListener('click', function() {
-            const url = document.getElementById('sales-role-url')?.value || 'https://play.dify.ai/sales-role';
-            window.open(url, '_blank');
+        salesRoleBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                if (!settings.sales_role_url || settings.sales_role_url.trim() === '') {
+                    showNotification('セールス役URLが設定されていません。管理者にURL設定を依頼してください。', 'warning');
+                    return;
+                }
+                
+                window.open(settings.sales_role_url, '_blank');
+            } catch (error) {
+                console.error('設定取得エラー:', error);
+                showNotification('設定の取得に失敗しました。', 'error');
+            }
         });
     }
     
     // 顧客役ロールプレイボタン
     const customerRoleBtn = document.getElementById('customer-role-btn');
     if (customerRoleBtn) {
-        customerRoleBtn.addEventListener('click', function() {
-            const url = document.getElementById('customer-role-url')?.value || 'https://play.dify.ai/customer-role';
-            window.open(url, '_blank');
+        customerRoleBtn.addEventListener('click', async function() {
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+                
+                if (!settings.customer_role_url || settings.customer_role_url.trim() === '') {
+                    showNotification('顧客役URLが設定されていません。管理者にURL設定を依頼してください。', 'warning');
+                    return;
+                }
+                
+                window.open(settings.customer_role_url, '_blank');
+            } catch (error) {
+                console.error('設定取得エラー:', error);
+                showNotification('設定の取得に失敗しました。', 'error');
+            }
         });
     }
     
@@ -236,6 +260,12 @@ function setupEventListeners() {
     const copyProposalBtn = document.getElementById('copy-proposal-btn');
     if (copyProposalBtn) {
         copyProposalBtn.addEventListener('click', copyProposalAsMarkdown);
+    }
+    
+    // 顧客サマリーコピーボタン
+    const copyCustomerSummaryBtn = document.getElementById('copy-customer-summary-btn');
+    if (copyCustomerSummaryBtn) {
+        copyCustomerSummaryBtn.addEventListener('click', copyCustomerSummary);
     }
     
     // テキスト整形ボタン
@@ -403,6 +433,12 @@ function loadApiSettings() {
             if (data.text_format_api_key) {
                 document.getElementById('api-key-text-format').value = data.text_format_api_key;
             }
+            if (data.customer_role_url) {
+                document.getElementById('customer-role-url-setting').value = data.customer_role_url;
+            }
+            if (data.sales_role_url) {
+                document.getElementById('sales-role-url-setting').value = data.sales_role_url;
+            }
             
             updateConnectionStatus(data.is_connected);
             
@@ -454,7 +490,9 @@ function handleSaveApiSettings() {
         proposal_api_key: document.getElementById('api-key-proposal').value,
         qa_api_key: document.getElementById('api-key-qa').value,
         salestalk_api_key: document.getElementById('api-key-salestalk').value,
-        text_format_api_key: document.getElementById('api-key-text-format').value
+        text_format_api_key: document.getElementById('api-key-text-format').value,
+        customer_role_url: document.getElementById('customer-role-url-setting').value,
+        sales_role_url: document.getElementById('sales-role-url-setting').value
     };
     
     fetch('/api/settings', {
@@ -1370,6 +1408,45 @@ function handleGenerateRoleplaySalesTalk() {
         toggleLoading(false);
         console.error('セールストーク生成に失敗しました', error);
         showNotification('セールストーク生成に失敗しました', 'error');
+    });
+}
+
+/**
+ * 顧客情報サマリーをクリップボードにコピーする
+ */
+function copyCustomerSummary() {
+    const customerNameElement = document.getElementById('summary-name');
+    const customerDetailsElement = document.getElementById('summary-details');
+    
+    if (!customerNameElement || !customerDetailsElement) {
+        showNotification('顧客情報が見つかりません', 'warning');
+        return;
+    }
+    
+    const customerName = customerNameElement.textContent.trim();
+    const customerDetails = customerDetailsElement.textContent.trim();
+    
+    if (!customerName && !customerDetails) {
+        showNotification('コピーする顧客情報がありません', 'warning');
+        return;
+    }
+    
+    let summaryText = `## 顧客情報サマリー\n\n`;
+    
+    if (customerName) {
+        summaryText += `**顧客名:** ${customerName}様\n\n`;
+    }
+    
+    if (customerDetails) {
+        summaryText += `**顧客詳細:**\n${customerDetails}\n\n`;
+    }
+    
+    // クリップボードにコピー
+    navigator.clipboard.writeText(summaryText).then(() => {
+        showNotification('顧客情報をコピーしました', 'success');
+    }).catch(err => {
+        console.error('コピーに失敗しました:', err);
+        showNotification('コピーに失敗しました', 'error');
     });
 }
 
