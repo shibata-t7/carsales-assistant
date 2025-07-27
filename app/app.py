@@ -108,6 +108,11 @@ def get_date_filter(period):
     
     return None
 
+# Dify API用ユーザー識別子取得関数
+def get_dify_user_identifier():
+    """Dify API用のユーザー識別子を取得"""
+    return current_user.username
+
 # API設定取得用共通関数
 def get_active_api_settings():
     """
@@ -334,7 +339,7 @@ def generate_proposal():
             'input': json.dumps(customer_data)
         },
         'response_mode': 'streaming',
-        'user': f"user-{current_user.id}"
+        'user': get_dify_user_identifier()
     }
     
     base_url = settings.api_endpoint
@@ -420,7 +425,7 @@ def format_customer_text():
             'input': json.dumps(format_data)
         },
         'response_mode': 'streaming',
-        'user': f"text-format-user-{current_user.id}"
+        'user': get_dify_user_identifier()
     }
     
     base_url = settings.api_endpoint
@@ -513,7 +518,7 @@ def generate_salestalk():
             'input': json.dumps(conversation_data)
         },
         'response_mode': 'streaming',
-        'user': f"conversation-user-{current_user.id}"
+        'user': get_dify_user_identifier()
     }
     
     base_url = settings.api_endpoint
@@ -604,7 +609,7 @@ def ask_question():
             'input': json.dumps(qa_data)
         },
         'response_mode': 'streaming',
-        'user': f"qa-user-{current_user.id}"
+        'user': get_dify_user_identifier()
     }
     
     base_url = settings.api_endpoint
@@ -697,7 +702,7 @@ def generate_conversation():
             'input': json.dumps(conversation_data)
         },
         'response_mode': 'streaming',
-        'user': f"conversation-user-{current_user.id}"
+        'user': get_dify_user_identifier()
     }
     
     base_url = settings.api_endpoint
