@@ -1156,4 +1156,267 @@ textarea {
 .proposal-tab-content.active {
     display: block;
     animation: fadeIn var(--transition-default) ease;
+}
+
+/* ===========================================
+   デュアル提案スタイル
+   =========================================== */
+
+/* デュアル提案コンテナ */
+.dual-proposals-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-l);
+    margin-bottom: var(--spacing-l);
+}
+
+/* 提案カード */
+.proposal-card {
+    position: relative;
+    transition: all var(--transition-default) ease;
+}
+
+.proposal-card .card {
+    height: 100%;
+    border: 2px solid transparent;
+    transition: all var(--transition-default) ease;
+}
+
+/* 提案選択状態 */
+.proposal-card.selected .card {
+    border-color: var(--toyota-red);
+    box-shadow: 0 4px 16px rgba(229, 0, 18, 0.2);
+    transform: scale(1.02);
+}
+
+/* 提案選択UI */
+.proposal-selection {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+    flex: 1;
+}
+
+.proposal-selection input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--toyota-red);
+    cursor: pointer;
+}
+
+.proposal-selection label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-s);
+    cursor: pointer;
+    margin: 0;
+    flex: 1;
+}
+
+.proposal-selection label:hover h2 {
+    color: var(--toyota-red);
+    transition: color var(--transition-default) ease;
+}
+
+.proposal-selection h2 {
+    margin: 0;
+    font-size: var(--font-size-large);
+    color: var(--gray-800);
+    transition: color var(--transition-default) ease;
+}
+
+/* カードヘッダーの調整 */
+.proposal-card .card-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--spacing-m) var(--spacing-l);
+    background: linear-gradient(135deg, var(--gray-100) 0%, var(--white) 100%);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.proposal-card .card-header h2 {
+    text-align: center;
+    margin: 0;
+}
+
+/* 選択された提案のヘッダー */
+.proposal-card.selected .card-header {
+    background: linear-gradient(135deg, rgba(229, 0, 18, 0.05) 0%, var(--white) 100%);
+}
+
+/* 提案②が無い場合の表示制御 */
+.proposal-card[data-proposal="proposal_2"].hidden {
+    display: none;
+}
+
+.dual-proposals-container.single-proposal {
+    grid-template-columns: 1fr;
+    max-width: 600px;
+    margin: 0 auto var(--spacing-l) auto;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .dual-proposals-container {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-m);
+    }
+    
+    .proposal-card .card-header {
+        padding: var(--spacing-s) var(--spacing-m);
+    }
+    
+    .proposal-selection h2 {
+        font-size: var(--font-size-medium);
+    }
+}
+
+@media (max-width: 480px) {
+    .dual-proposals-container {
+        gap: var(--spacing-s);
+    }
+    
+    .proposal-selection {
+        flex-direction: row;
+        gap: var(--spacing-xs);
+    }
+    
+    .proposal-selection input[type="radio"] {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .proposal-selection h2 {
+        font-size: var(--font-size-base);
+    }
+}
+
+/* 提案カードのホバー効果 */
+.proposal-card:hover .card {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.proposal-card.selected:hover .card {
+    transform: scale(1.02) translateY(-2px);
+    box-shadow: 0 8px 24px rgba(229, 0, 18, 0.25);
+}
+
+/* アニメーション */
+@keyframes proposalSelect {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1.02);
+    }
+}
+
+.proposal-card.selecting .card {
+    animation: proposalSelect 0.3s ease;
+}
+
+/* ===========================================
+   FAQ・Q&A提案選択タブ
+   =========================================== */
+
+/* FAQ提案選択タブ */
+.faq-proposal-tabs {
+    display: flex;
+    gap: var(--spacing-s);
+    margin-bottom: var(--spacing-l);
+    padding: var(--spacing-xs);
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius-medium);
+}
+
+.faq-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-s) var(--spacing-m);
+    background-color: transparent;
+    border: none;
+    border-radius: var(--border-radius-small);
+    color: var(--gray-600);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-quick);
+}
+
+.faq-tab-btn:hover {
+    background-color: var(--white);
+    color: var(--toyota-dark-blue);
+}
+
+.faq-tab-btn.active {
+    background-color: var(--white);
+    color: var(--toyota-red);
+    box-shadow: var(--shadow-small);
+}
+
+.faq-tab-btn i {
+    font-size: var(--font-size-small);
+}
+
+/* Q&A提案選択タブ */
+.qa-proposal-tabs {
+    display: flex;
+    gap: var(--spacing-s);
+    margin-bottom: var(--spacing-l);
+    padding: var(--spacing-xs);
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius-medium);
+}
+
+.qa-tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-s) var(--spacing-m);
+    background-color: transparent;
+    border: none;
+    border-radius: var(--border-radius-small);
+    color: var(--gray-600);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-quick);
+}
+
+.qa-tab-btn:hover {
+    background-color: var(--white);
+    color: var(--toyota-dark-blue);
+}
+
+.qa-tab-btn.active {
+    background-color: var(--white);
+    color: var(--toyota-red);
+    box-shadow: var(--shadow-small);
+}
+
+.qa-tab-btn i {
+    font-size: var(--font-size-small);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .faq-proposal-tabs,
+    .qa-proposal-tabs {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    
+    .faq-tab-btn,
+    .qa-tab-btn {
+        padding: var(--spacing-s);
+        font-size: var(--font-size-small);
+    }
 } 

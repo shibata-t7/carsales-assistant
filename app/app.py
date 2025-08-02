@@ -52,6 +52,7 @@ class History(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     car_model = db.Column(db.String(100))
     sales_talk = db.Column(db.Text)
+    qa_history = db.Column(db.Text)  # Q&A履歴を保存するフィールド
     
     # ユーザー情報への関係
     user = db.relationship('User', backref='histories')
@@ -112,6 +113,7 @@ def get_date_filter(period):
 def get_dify_user_identifier():
     """Dify API用のユーザー識別子を取得"""
     return current_user.username
+
 
 # API設定取得用共通関数
 def get_active_api_settings():
@@ -384,6 +386,18 @@ def generate_proposal():
             if isinstance(content, dict) and "text" in content:
                 content = json.loads(content["text"]) if isinstance(content["text"], str) else content["text"]
             
+            # 新形式（proposal_1, proposal_2）で返却
+            # proposal_2が無い場合はNullを設定
+            if 'proposal_1' not in content and 'proposal_2' not in content:
+                # 単一提案の場合は proposal_1 として設定
+                content = {
+                    'proposal_1': content,
+                    'proposal_2': None
+                }
+            elif 'proposal_2' not in content:
+                # proposal_2が無い場合はNullを明示的に設定
+                content['proposal_2'] = None
+                
             return jsonify({'status': 'success', 'proposal': content})
             
         except json.JSONDecodeError:
@@ -495,12 +509,13 @@ def generate_salestalk():
     if not settings or not settings.is_connected:
         return jsonify({'status': 'error', 'message': 'API接続が設定されていないか、接続テストに失敗しています'})
     
-    # Dify APIに送信するデータ
+    # Dify APIに送信するデータ - 新形式専用
     conversation_data = {
         'customer_name': data.get('customer_name', ''),
         'customer_details': data.get('customer_details', ''),
         'customer_type': data.get('customer_type', ''),
-        'proposal': data.get('proposal', {})
+        'proposal_1': data.get('proposal_1', {}),
+        'proposal_2': data.get('proposal_2', {})
     }
     
     # データサイズを確認してAPIの制限内に収まるようにする
@@ -508,10 +523,13 @@ def generate_salestalk():
     if len(json_data) > 45000:  # 50000文字の制限に余裕を持たせる
         # customer_detailsとreasonを短く切り詰める
         conversation_data['customer_details'] = conversation_data['customer_details'][:2000]
-        if 'proposal' in conversation_data and isinstance(conversation_data['proposal'], dict):
-            for section in ['car', 'payment', 'timing', 'trade_in']:
-                if section in conversation_data['proposal'] and 'reason' in conversation_data['proposal'][section]:
-                    conversation_data['proposal'][section]['reason'] = conversation_data['proposal'][section]['reason'][:1000]
+        
+        # proposal_1, proposal_2 の reason を短縮
+        for proposal_key in ['proposal_1', 'proposal_2']:
+            if proposal_key in conversation_data and isinstance(conversation_data[proposal_key], dict):
+                for section in ['car', 'payment', 'timing', 'trade_in']:
+                    if section in conversation_data[proposal_key] and 'reason' in conversation_data[proposal_key][section]:
+                        conversation_data[proposal_key][section]['reason'] = conversation_data[proposal_key][section]['reason'][:1000]
     
     dify_data = {
         'inputs': {
@@ -583,13 +601,14 @@ def ask_question():
     if not settings or not settings.is_connected:
         return jsonify({'status': 'error', 'message': 'API接続が設定されていないか、接続テストに失敗しています'})
     
-    # Dify APIに送信するデータ
+    # Dify APIに送信するデータ - 新形式専用
     qa_data = {
         'customer_name': data.get('customer_name', ''),
         'customer_details': data.get('customer_details', ''),
         'customer_type': data.get('customer_type', ''),
-        'proposal': json.dumps(data.get('proposal', {})),  # オブジェクトを文字列化
-        'sales_question': data.get('question', '')  # questionをsales_questionとして送信
+        'proposal_1': json.dumps(data.get('proposal_1', {})),
+        'proposal_2': json.dumps(data.get('proposal_2', {})),
+        'sales_question': data.get('question', '')
     }
     
     # データサイズを確認してAPIの制限内に収まるようにする
@@ -597,12 +616,16 @@ def ask_question():
     if len(json_data) > 45000:  # 50000文字の制限に余裕を持たせる
         # customer_detailsと提案説明文を短く切り詰める
         qa_data['customer_details'] = qa_data['customer_details'][:2000]
-        proposal_obj = data.get('proposal', {})
-        if isinstance(proposal_obj, dict):
-            for section in ['car', 'payment', 'timing', 'trade_in']:
-                if section in proposal_obj and 'reason' in proposal_obj[section]:
-                    proposal_obj[section]['reason'] = proposal_obj[section]['reason'][:1000]
-            qa_data['proposal'] = json.dumps(proposal_obj)
+        
+        # proposal_1, proposal_2 の reason を短縮
+        for proposal_key in ['proposal_1', 'proposal_2']:
+            if proposal_key in qa_data:
+                proposal_obj = data.get(proposal_key, {})
+                if isinstance(proposal_obj, dict):
+                    for section in ['car', 'payment', 'timing', 'trade_in']:
+                        if section in proposal_obj and 'reason' in proposal_obj[section]:
+                            proposal_obj[section]['reason'] = proposal_obj[section]['reason'][:1000]
+                    qa_data[proposal_key] = json.dumps(proposal_obj)
     
     dify_data = {
         'inputs': {
@@ -767,15 +790,28 @@ def generate_conversation():
 def save_history():
     data = request.get_json()
     
+    # デュアル提案形式でproposal_dataを構築
+    proposal_data = {
+        'proposal_1': data.get('proposal_1'),
+        'proposal_2': data.get('proposal_2'),
+        'selected_proposal': data.get('selected_proposal', 'proposal_1')
+    }
+    
+    # 後方互換性：旧形式のproposalがある場合
+    if data.get('proposal') and not data.get('proposal_1'):
+        proposal_data['proposal_1'] = data.get('proposal')
+        proposal_data['proposal_2'] = None
+    
     history = History(
         user_id=current_user.id,
         customer_name=data.get('customer_name', ''),
         customer_type=data.get('customer_type', ''),
         customer_details=data.get('customer_details', ''),
         dealer_info=data.get('dealer_info', ''),
-        proposal_data=json.dumps(data.get('proposal', {})),
+        proposal_data=json.dumps(proposal_data),
         car_model=data.get('car_model', ''),
-        sales_talk=data.get('sales_talk', '')
+        sales_talk=data.get('sales_talk', ''),
+        qa_history=json.dumps(data.get('qa_history', {}))
     )
     
     db.session.add(history)
@@ -841,13 +877,44 @@ def get_history_detail(history_id):
     if not history:
         return jsonify({'status': 'error', 'message': '履歴が見つかりません'})
     
+    # proposal_dataを解析して新旧形式を判定
+    proposal_data = json.loads(history.proposal_data)
+    
+    # 後方互換性：旧形式を新形式に変換
+    if 'proposal_1' not in proposal_data:
+        # 旧形式の場合：car, payment, timing, trade_inがdirectにある
+        if any(key in proposal_data for key in ['car', 'payment', 'timing', 'trade_in']):
+            proposal_data = {
+                'proposal_1': proposal_data,
+                'proposal_2': None,
+                'selected_proposal': 'proposal_1'
+            }
+        else:
+            # 空のproposal_dataの場合
+            proposal_data = {
+                'proposal_1': None,
+                'proposal_2': None, 
+                'selected_proposal': 'proposal_1'
+            }
+    
+    # Q&A履歴の取得
+    qa_history_data = {}
+    if history.qa_history:
+        try:
+            qa_history_data = json.loads(history.qa_history)
+        except:
+            qa_history_data = {}
+    
     return jsonify({
         'id': history.id,
         'customer_name': history.customer_name,
         'customer_type': history.customer_type,
         'customer_details': history.customer_details,
         'dealer_info': history.dealer_info,
-        'proposal': json.loads(history.proposal_data),
+        'proposal_1': proposal_data.get('proposal_1'),
+        'proposal_2': proposal_data.get('proposal_2'),
+        'selected_proposal': proposal_data.get('selected_proposal', 'proposal_1'),
+        'qa_history': qa_history_data,
         'car_model': history.car_model,
         'sales_talk': history.sales_talk,
         'username': history.user.username,

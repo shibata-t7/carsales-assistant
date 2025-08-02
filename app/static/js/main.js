@@ -9,9 +9,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // グローバル変数
-let currentProposal = null;
+let currentProposals = {
+    proposal_1: null,
+    proposal_2: null,
+    selected: 'proposal_1'
+};
 let currentCustomerData = null;
 let currentSalesTalk = null;
+
+// 提案別Q&A履歴
+let qaHistory = {
+    proposal_1: [],
+    proposal_2: []
+};
 
 /**
  * アプリケーションの初期設定
@@ -19,9 +29,6 @@ let currentSalesTalk = null;
 function initApp() {
     // アコーディオン初期化
     initAccordions();
-    
-    // プロポーザルタブ初期化
-    initProposalTabs();
 }
 
 /**
@@ -268,10 +275,197 @@ function setupEventListeners() {
         copyCustomerSummaryBtn.addEventListener('click', copyCustomerSummary);
     }
     
+    
     // テキスト整形ボタン
     const formatTextBtn = document.getElementById('format-text-btn');
     if (formatTextBtn) {
         formatTextBtn.addEventListener('click', handleFormatText);
+    }
+    
+    // デュアル提案タブ制御の設定
+    setupDualProposalTabs();
+    
+    // FAQ・Q&A提案選択タブ制御の設定
+    setupFaqProposalTabs();
+    setupQaProposalTabs();
+}
+
+/**
+ * デュアル提案タブ制御の設定
+ */
+function setupDualProposalTabs() {
+    // 各提案のタブ制御を独立して設定
+    ['1', '2'].forEach(suffix => {
+        const tabs = document.querySelectorAll(`#proposal-tabs-${suffix} .proposal-tab`);
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.getAttribute('data-tab');
+                handleProposalTabSwitch(suffix, targetTab);
+            });
+        });
+    });
+}
+
+/**
+ * 提案タブ切り替え処理
+ * @param {string} proposalSuffix - 提案番号（'1' または '2'）
+ * @param {string} targetTab - 切り替え先タブID
+ */
+function handleProposalTabSwitch(proposalSuffix, targetTab) {
+    // 該当提案のタブとコンテンツを取得
+    const tabs = document.querySelectorAll(`#proposal-tabs-${proposalSuffix} .proposal-tab`);
+    const contents = document.querySelectorAll(`#tab-content-${proposalSuffix} .proposal-tab-content`);
+    
+    // 全てのタブから active クラスを削除
+    tabs.forEach(tab => tab.classList.remove('active'));
+    contents.forEach(content => content.classList.remove('active'));
+    
+    // 選択されたタブとコンテンツに active クラスを追加
+    const selectedTab = document.querySelector(`#proposal-tabs-${proposalSuffix} [data-tab="${targetTab}"]`);
+    const selectedContent = document.getElementById(targetTab);
+    
+    if (selectedTab) selectedTab.classList.add('active');
+    if (selectedContent) selectedContent.classList.add('active');
+}
+
+/**
+ * FAQ提案選択タブの設定
+ */
+function setupFaqProposalTabs() {
+    const faqTabBtns = document.querySelectorAll('.faq-tab-btn');
+    faqTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const proposalType = this.getAttribute('data-proposal');
+            
+            // アクティブタブの切り替え
+            faqTabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 選択された提案のFAQを表示
+            displaySelectedProposalFaq(proposalType);
+        });
+    });
+}
+
+/**
+ * Q&A提案選択タブの設定
+ */
+function setupQaProposalTabs() {
+    const qaTabBtns = document.querySelectorAll('.qa-tab-btn');
+    qaTabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const proposalType = this.getAttribute('data-proposal');
+            
+            // アクティブタブの切り替え
+            qaTabBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // 選択された提案をグローバル変数に保存（Q&A送信用）
+            currentProposals.selected = proposalType;
+            
+            // プレースホルダーテキストを更新
+            updateQaPlaceholder(proposalType);
+            
+            // 選択した提案のQ&A履歴を表示
+            displayQaHistory(proposalType);
+        });
+    });
+}
+
+/**
+ * 選択された提案のFAQを表示
+ * @param {string} proposalType - 提案タイプ（'proposal_1' または 'proposal_2'）
+ */
+function displaySelectedProposalFaq(proposalType) {
+    const proposal = currentProposals[proposalType];
+    if (proposal && proposal.faq) {
+        displayFAQ(proposal.faq);
+    } else {
+        // FAQが無い場合の表示
+        const faqContainer = document.getElementById('faq-items');
+        faqContainer.innerHTML = '<p class="text-muted">この提案のFAQはありません。</p>';
+    }
+}
+
+/**
+ * Q&Aプレースホルダーテキストを更新
+ * @param {string} proposalType - 提案タイプ（'proposal_1' または 'proposal_2'）
+ */
+function updateQaPlaceholder(proposalType) {
+    const qaInput = document.getElementById('qa-question');
+    if (qaInput) {
+        const proposalNumber = proposalType === 'proposal_1' ? '①' : '②';
+        qaInput.placeholder = `提案${proposalNumber}について質問があれば入力してください`;
+    }
+}
+
+/**
+ * 指定した提案のQ&A履歴を表示
+ * @param {string} proposalType - 提案タイプ（'proposal_1' または 'proposal_2'）
+ */
+function displayQaHistory(proposalType) {
+    const qaResponsesContainer = document.getElementById('qa-responses');
+    if (!qaResponsesContainer) return;
+    
+    const history = qaHistory[proposalType] || [];
+    
+    // 履歴をクリア
+    qaResponsesContainer.innerHTML = '';
+    
+    // 履歴がない場合
+    if (history.length === 0) {
+        qaResponsesContainer.innerHTML = '<p class="text-muted">まだ質問がありません。</p>';
+        return;
+    }
+    
+    // 履歴を表示
+    history.forEach(item => {
+        const qaItemHtml = `
+            <div class="qa-item">
+                <div class="qa-question">
+                    <span class="qa-badge">Q</span>
+                    <p>${item.question}</p>
+                </div>
+                <div class="qa-answer">
+                    <span class="qa-badge">A</span>
+                    <p>${item.answer}</p>
+                </div>
+            </div>
+        `;
+        qaResponsesContainer.innerHTML += qaItemHtml;
+    });
+}
+
+/**
+ * FAQ・Q&Aタブの表示制御（提案数に応じて）
+ */
+function updateProposalTabsVisibility() {
+    const faqProposalTabs = document.querySelector('.faq-proposal-tabs');
+    const qaProposalTabs = document.querySelector('.qa-proposal-tabs');
+    const faqTab2 = document.querySelector('.faq-tab-btn[data-proposal="proposal_2"]');
+    const qaTab2 = document.querySelector('.qa-tab-btn[data-proposal="proposal_2"]');
+    
+    if (currentProposals.proposal_2) {
+        // 提案②がある場合：タブを表示
+        if (faqTab2) faqTab2.style.display = 'flex';
+        if (qaTab2) qaTab2.style.display = 'flex';
+    } else {
+        // 提案②がない場合：タブを非表示
+        if (faqTab2) faqTab2.style.display = 'none';
+        if (qaTab2) qaTab2.style.display = 'none';
+        
+        // 提案①のタブが選択されていることを確認
+        const faqTab1 = document.querySelector('.faq-tab-btn[data-proposal="proposal_1"]');
+        const qaTab1 = document.querySelector('.qa-tab-btn[data-proposal="proposal_1"]');
+        if (faqTab1) faqTab1.classList.add('active');
+        if (qaTab1) qaTab1.classList.add('active');
+        
+        // 選択を提案①に設定
+        currentProposals.selected = 'proposal_1';
+        updateQaPlaceholder('proposal_1');
+        
+        // Q&A履歴を提案①の履歴で更新
+        displayQaHistory('proposal_1');
     }
 }
 
@@ -297,36 +491,6 @@ function initAccordions() {
     });
 }
 
-/**
- * プロポーザルタブの初期化
- */
-function initProposalTabs() {
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.proposal-tab')) {
-            const tab = e.target.closest('.proposal-tab');
-            
-            // 現在のアクティブタブを非アクティブにする
-            document.querySelectorAll('.proposal-tab').forEach(t => {
-                t.classList.remove('active');
-            });
-            
-            // 現在のアクティブコンテンツを非アクティブにする
-            document.querySelectorAll('.proposal-tab-content').forEach(c => {
-                c.classList.remove('active');
-            });
-            
-            // クリックされたタブをアクティブにする
-            tab.classList.add('active');
-            
-            // 対応するコンテンツをアクティブにする
-            const tabId = tab.getAttribute('data-tab');
-            const tabContent = document.getElementById(tabId);
-            if (tabContent) {
-                tabContent.classList.add('active');
-            }
-        }
-    });
-}
 
 /**
  * タブの切り替え処理
@@ -588,14 +752,16 @@ function handleGenerateProposal() {
         toggleLoading(false);
         
         if (data.status === 'success') {
-            // 提案データを保存
-            currentProposal = data.proposal;
+            // 新形式で提案データを保存
+            currentProposals.proposal_1 = data.proposal.proposal_1;
+            currentProposals.proposal_2 = data.proposal.proposal_2;
+            currentProposals.selected = 'proposal_1';
             
             // 顧客情報サマリーを更新
             updateCustomerSummary();
             
             // 提案内容を表示
-            displayProposal(data.proposal);
+            displayProposal(currentProposals);
             
             // タブを提案内容に切り替え
             changeTab('proposal');
@@ -640,132 +806,161 @@ function updateCustomerSummary() {
 }
 
 /**
- * 提案内容を表示する
- * @param {Object} proposal - 提案内容のデータ
+ * デュアル提案内容を表示する
+ * @param {Object} proposals - 提案内容のデータ（新形式専用）
+ * @param {boolean} isFromHistory - 履歴復元時かどうか
  */
-function displayProposal(proposal) {
-    if (!proposal || !proposal.proposal) return;
+function displayProposal(proposals, isFromHistory = false) {
+    if (!proposals || !proposals.proposal_1) return;
     
-    const p = proposal.proposal;
+    // proposal_1 は必須、proposal_2 は null の場合あり
+    const proposalCard2 = document.getElementById('proposal-card-2');
+    
+    if (proposals.proposal_2) {
+        // 2案表示
+        proposalCard2.classList.remove('hidden');
+        displaySingleProposal(proposals.proposal_2, '2');
+    } else {
+        // proposal_2 が null の場合は非表示
+        proposalCard2.classList.add('hidden');
+    }
+    
+    // proposal_1 は必ず表示
+    displaySingleProposal(proposals.proposal_1, '1');
+    
+    // FAQ表示（デフォルトで提案①のFAQを表示）
+    displaySelectedProposalFaq('proposal_1');
+    
+    // FAQ・Q&Aタブの表示制御（提案②がない場合はタブを非表示）
+    updateProposalTabsVisibility();
+    
+    // 新提案生成時のみQ&A履歴をクリア（履歴復元時はクリアしない）
+    if (!isFromHistory) {
+        qaHistory.proposal_1 = [];
+        qaHistory.proposal_2 = [];
+    }
+    
+    // Q&A履歴表示を初期化（選択中の提案の履歴を表示）
+    displayQaHistory(currentProposals.selected);
+}
+
+/**
+ * 単一提案の表示
+ * @param {Object} proposal - 提案データ
+ * @param {string} suffix - ID接尾辞（'1' または '2'）
+ */
+function displaySingleProposal(proposal, suffix) {
+    if (!proposal) return;
     
     // 車種の情報を表示
-    if (p.car) {
-        document.getElementById('car-model').textContent = p.car.model || '未設定';
-        document.getElementById('car-grade').textContent = p.car.grade || '未設定';
-        document.getElementById('car-price').textContent = p.car.price || '未設定';
-        document.getElementById('car-reason').textContent = p.car.reason || '情報がありません';
+    if (proposal.car) {
+        document.getElementById(`car-model-${suffix}`).textContent = proposal.car.model || '未設定';
+        document.getElementById(`car-grade-${suffix}`).textContent = proposal.car.grade || '未設定';
+        document.getElementById(`car-price-${suffix}`).textContent = proposal.car.price || '未設定';
+        document.getElementById(`car-reason-${suffix}`).textContent = proposal.car.reason || '情報がありません';
     }
     
     // 支払方法の情報を表示
-    if (p.payment) {
-        document.getElementById('payment-method').textContent = p.payment.recommended_method || '未設定';
-        document.getElementById('payment-simulation').textContent = p.payment.simulation || '支払いシミュレーション情報がありません';
-        document.getElementById('payment-reason').textContent = p.payment.reason || '情報がありません';
+    if (proposal.payment) {
+        document.getElementById(`payment-method-${suffix}`).textContent = proposal.payment.recommended_method || '未設定';
+        document.getElementById(`payment-simulation-${suffix}`).textContent = proposal.payment.simulation || '支払いシミュレーション情報がありません';
+        document.getElementById(`payment-reason-${suffix}`).textContent = proposal.payment.reason || '情報がありません';
     }
     
     // 購入時期の情報を表示
-    if (p.timing) {
-        document.getElementById('recommended-timing').textContent = p.timing.recommended_date || '未設定';
-        document.getElementById('timing-reason').textContent = p.timing.reason || '情報がありません';
+    if (proposal.timing) {
+        document.getElementById(`recommended-timing-${suffix}`).textContent = proposal.timing.recommended_date || '未設定';
+        document.getElementById(`timing-reason-${suffix}`).textContent = proposal.timing.reason || '情報がありません';
     }
     
     // 下取りの情報を表示
-    if (p.trade_in) {
-        document.getElementById('tradein-car').textContent = p.trade_in.owned_car || '情報なし';
-        document.getElementById('tradein-price').textContent = p.trade_in.assesment || '未設定';
-        document.getElementById('tradein-details').innerHTML = `
+    if (proposal.trade_in) {
+        document.getElementById(`tradein-car-${suffix}`).textContent = proposal.trade_in.owned_car || '情報なし';
+        document.getElementById(`tradein-price-${suffix}`).textContent = proposal.trade_in.assesment || '未設定';
+        document.getElementById(`tradein-details-${suffix}`).innerHTML = `
             <ul>
-                <li>${p.trade_in.reason?.split('。')[0] || '情報がありません'}</li>
-                <li>${p.trade_in.reason?.split('。')[1] || ''}</li>
-                <li>${p.trade_in.reason?.split('。')[2] || ''}</li>
+                <li>${proposal.trade_in.reason?.split('。')[0] || '情報がありません'}</li>
+                <li>${proposal.trade_in.reason?.split('。')[1] || ''}</li>
+                <li>${proposal.trade_in.reason?.split('。')[2] || ''}</li>
             </ul>
         `;
     }
+}
+
+
+/**
+ * FAQ表示
+ * @param {Object} faq - FAQ データ
+ */
+function displayFAQ(faq) {
+    const faqContainer = document.getElementById('faq-items');
+    faqContainer.innerHTML = '';
     
-    // FAQの表示
-    if (p.faq) {
-        const faqContainer = document.getElementById('faq-items');
-        faqContainer.innerHTML = '';
+    if (!faq) return;
+    
+    // FAQの項目を収集
+    const faqPairs = [];
+    let i = 1;
+    while (true) {
+        // 質問キーの候補
+        const qKeys = [`question${i}`, `quesition${i}`];
+        const aKey = `answer${i}`;
         
-        // FAQの項目を収集
-        const faqPairs = [];
-        let i = 1;
-        while (true) {
-            // 質問キーの候補
-            const qKeys = [`question${i}`, `quesition${i}`];
-            const aKey = `answer${i}`;
-            
-            // いずれかの質問キーが存在するか確認
-            let qFound = false;
-            for (const qKey of qKeys) {
-                if (p.faq[qKey]) {
-                    qFound = true;
-                    faqPairs.push({ question: p.faq[qKey], answer: p.faq[aKey] });
-                    break;
-                }
-            }
-            
-            // 質問が見つからなければ終了
-            if (!qFound) {
+        // いずれかの質問キーが存在するか確認
+        let qFound = false;
+        for (const qKey of qKeys) {
+            if (faq[qKey]) {
+                qFound = true;
+                faqPairs.push({ question: faq[qKey], answer: faq[aKey] });
                 break;
             }
-            
-            i++;
         }
         
-        // FAQペアをHTML要素として表示
-        faqPairs.forEach(pair => {
-            const faqItemHtml = `
-                <div class="qa-accordion-item">
-                    <div class="qa-accordion-header">
-                        <span class="qa-badge">Q</span>
-                        <p>${pair.question || '質問が見つかりません'}</p>
-                        <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
-                    </div>
-                    <div class="qa-accordion-content" style="display: none;">
-                        <span class="qa-badge">A</span>
-                        <p>${pair.answer || '回答が見つかりません'}</p>
-                    </div>
-                </div>
-            `;
-            
-            faqContainer.innerHTML += faqItemHtml;
-        });
-        
-        // 各FAQアコーディオンヘッダーにイベントリスナーを直接追加
-        const faqHeaders = faqContainer.querySelectorAll('.qa-accordion-header');
-        faqHeaders.forEach(header => {
-            header.addEventListener('click', function() {
-                const content = this.nextElementSibling;
-                const isActive = this.classList.contains('active');
-                
-                // アクティブ状態を切り替え
-                this.classList.toggle('active');
-                
-                // アイコンの回転を切り替え
-                const icon = this.querySelector('.fas.fa-chevron-down');
-                if (icon) {
-                    if (isActive) {
-                        icon.style.transform = 'rotate(0deg)';
-                    } else {
-                        icon.style.transform = 'rotate(180deg)';
-                    }
-                }
-                
-                // コンテンツの表示切替
-                if (isActive) {
-                    content.style.display = 'none';
-                    content.classList.remove('active');
-                } else {
-                    content.style.display = 'flex';
-                    content.classList.add('active');
-                }
-            });
-        });
-        
-        // アコーディオン初期化（カードトグル用）
-        initAccordions();
+        // 質問が見つからなければ終了
+        if (!qFound) break;
+        i++;
     }
+    
+    // FAQペアをHTML要素として表示
+    faqPairs.forEach(pair => {
+        const faqItemHtml = `
+            <div class="qa-accordion-item">
+                <div class="qa-accordion-header">
+                    <span class="qa-badge">Q</span>
+                    <p>${pair.question || '質問が見つかりません'}</p>
+                    <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
+                </div>
+                <div class="qa-accordion-content" style="display: none;">
+                    <span class="qa-badge">A</span>
+                    <p>${pair.answer || '回答が見つかりません'}</p>
+                </div>
+            </div>
+        `;
+        faqContainer.innerHTML += faqItemHtml;
+    });
+    
+    // アコーディオンイベントリスナーを追加
+    const faqHeaders = faqContainer.querySelectorAll('.qa-accordion-header');
+    faqHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            const isActive = this.classList.contains('active');
+            
+            this.classList.toggle('active');
+            const icon = this.querySelector('.fas.fa-chevron-down');
+            if (icon) {
+                icon.style.transform = isActive ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+            
+            if (isActive) {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            } else {
+                content.style.display = 'flex';
+                content.classList.add('active');
+            }
+        });
+    });
 }
 
 /**
@@ -779,19 +974,26 @@ function handleAskQuestion() {
         return;
     }
     
-    if (!currentCustomerData || !currentProposal) {
+    if (!currentCustomerData || !currentProposals.proposal_1) {
         showNotification('提案内容がありません。先に提案を生成してください。', 'warning');
+        return;
+    }
+    
+    // 選択された提案のみを送信する
+    const selectedProposal = currentProposals[currentProposals.selected];
+    if (!selectedProposal) {
+        showNotification('選択された提案が見つかりません。', 'warning');
         return;
     }
     
     const data = {
         ...currentCustomerData,
-        proposal: currentProposal.proposal,
+        proposal_1: selectedProposal,  // 選択された提案を proposal_1 として送信
         question: question
     };
     
     // デバッグ出力
-    console.log('質問データ:', data);
+    console.log('質疑応答送信データ:', data);
     
     toggleLoading(true);
     
@@ -837,8 +1039,6 @@ function handleAskQuestion() {
  * @param {Object} answer - 回答データ
  */
 function displayAnswer(question, answer) {
-    const qaResponses = document.getElementById('qa-responses');
-    
     let summary = '';
     let details = '';
     
@@ -851,38 +1051,40 @@ function displayAnswer(question, answer) {
         details = answer.詳細説明 || '情報なし';
     }
     
-    const qaItemHtml = `
-        <div class="qa-item">
-            <div class="qa-question">
-                <span class="qa-badge">Q</span>
-                <p>${question}</p>
-            </div>
-            <div class="qa-answer">
-                <span class="qa-badge">A</span>
-                <div>
-                    <p><strong>${summary}</strong></p>
-                    <p>${details}</p>
-                </div>
-            </div>
-        </div>
-    `;
+    // 統合した回答テキストを作成
+    const answerText = summary === details ? summary : `${summary}\n\n${details}`;
     
-    qaResponses.innerHTML += qaItemHtml;
+    // 選択中の提案の履歴に追加
+    const selectedProposalType = currentProposals.selected;
+    if (!qaHistory[selectedProposalType]) {
+        qaHistory[selectedProposalType] = [];
+    }
+    
+    qaHistory[selectedProposalType].push({
+        question: question,
+        answer: answerText
+    });
+    
+    // 選択中の提案の履歴を再表示
+    displayQaHistory(selectedProposalType);
 }
 
 /**
  * セールストークを生成する
  */
 function handleGenerateSalesTalk() {
-    if (!currentCustomerData || !currentProposal) {
+    if (!currentCustomerData || !currentProposals.proposal_1) {
         showNotification('提案内容がありません。先に提案を生成してください。', 'warning');
         return;
     }
     
     const data = {
         ...currentCustomerData,
-        proposal: currentProposal.proposal
+        proposal_1: currentProposals.proposal_1,
+        proposal_2: currentProposals.proposal_2
     };
+    
+    console.log('セールストーク送信データ:', data);
     
     toggleLoading(true);
     
@@ -1009,15 +1211,18 @@ function displaySalesTalk(salestalk) {
  * 提案内容を履歴に保存する
  */
 function handleSaveProposal() {
-    if (!currentCustomerData || !currentProposal) {
+    if (!currentCustomerData || !currentProposals.proposal_1) {
         showNotification('提案内容がありません。先に提案を生成してください。', 'warning');
         return;
     }
     
     const data = {
         ...currentCustomerData,
-        proposal: currentProposal.proposal,
-        car_model: currentProposal.proposal.car?.model || '',
+        proposal_1: currentProposals.proposal_1,
+        proposal_2: currentProposals.proposal_2,
+        selected_proposal: currentProposals.selected,
+        qa_history: qaHistory,
+        car_model: currentProposals.proposal_1?.car?.model || '',
         sales_talk: currentSalesTalk ? JSON.stringify(currentSalesTalk) : ''
     };
     
@@ -1259,9 +1464,9 @@ function showHistoryDetail(historyId) {
             // 詳細カードを表示
             document.getElementById('history-detail-card').classList.remove('hidden');
             
-            // 提案内容を再表示するボタンのイベントリスナー
-            document.getElementById('show-proposal-again-btn').onclick = function() {
-                // 提案内容を現在の変数に設定
+            // 履歴から復元ボタンのイベントリスナー
+            document.getElementById('restore-from-history-btn').onclick = function() {
+                // Step 1: 全データを復元
                 currentCustomerData = {
                     customer_name: data.customer_name,
                     customer_type: data.customer_type,
@@ -1269,9 +1474,9 @@ function showHistoryDetail(historyId) {
                     dealer_info: data.dealer_info
                 };
                 
-                currentProposal = {
-                    proposal: data.proposal
-                };
+                currentProposals.proposal_1 = data.proposal_1 || data.proposal;
+                currentProposals.proposal_2 = data.proposal_2 || null;
+                currentProposals.selected = data.selected_proposal || 'proposal_1';
                 
                 // セールストークがあれば設定
                 if (data.sales_talk) {
@@ -1282,20 +1487,14 @@ function showHistoryDetail(historyId) {
                     }
                 }
                 
-                // 提案内容を表示
-                updateCustomerSummary();
-                displayProposal(currentProposal);
+                // Q&A履歴があれば復元
+                if (data.qa_history) {
+                    qaHistory = data.qa_history;
+                } else {
+                    qaHistory = { proposal_1: [], proposal_2: [] };
+                }
                 
-                // タブを提案内容に切り替え
-                changeTab('proposal');
-                
-                // 詳細カードを非表示
-                document.getElementById('history-detail-card').classList.add('hidden');
-            };
-            
-            // 新規提案に利用するボタンのイベントリスナー
-            document.getElementById('use-for-new-proposal-btn').onclick = function() {
-                // 顧客情報入力欄に値を設定
+                // Step 2: 顧客情報入力画面のDOM更新
                 document.getElementById('customer-name').value = data.customer_name;
                 
                 const customerTypeRadios = document.querySelectorAll('input[name="customer-type"]');
@@ -1308,10 +1507,14 @@ function showHistoryDetail(historyId) {
                 document.getElementById('customer-details').value = data.customer_details;
                 document.getElementById('dealer-info').value = data.dealer_info;
                 
-                // タブを顧客情報入力に切り替え
+                // Step 3: 提案内容画面のデータ更新
+                updateCustomerSummary();
+                displayProposal(currentProposals, true);
+                
+                // Step 4: 顧客情報入力画面に移動
                 changeTab('customer-input');
                 
-                // 詳細カードを非表示
+                // Step 5: 詳細カードを非表示
                 document.getElementById('history-detail-card').classList.add('hidden');
             };
         })
@@ -1353,14 +1556,14 @@ function deleteHistory(historyId) {
  * ロールプレイ用セールストークを生成する
  */
 function handleGenerateRoleplaySalesTalk() {
-    if (!currentCustomerData || !currentProposal) {
+    if (!currentCustomerData || !currentProposals.proposal_1) {
         showNotification('提案内容がありません。先に提案を生成してください。', 'warning');
         return;
     }
     
     const data = {
         ...currentCustomerData,
-        proposal: currentProposal.proposal
+        proposal: currentProposals.proposal_1
     };
     
     // JSONデータを圧縮して文字数を削減
@@ -1412,7 +1615,7 @@ function handleGenerateRoleplaySalesTalk() {
 }
 
 /**
- * 顧客情報サマリーをクリップボードにコピーする
+ * 顧客情報と全提案をクリップボードにコピーする
  */
 function copyCustomerSummary() {
     const customerNameElement = document.getElementById('summary-name');
@@ -1431,19 +1634,15 @@ function copyCustomerSummary() {
         return;
     }
     
-    let summaryText = `## 顧客情報サマリー\n\n`;
+    // 販売店情報を取得（履歴復元時も考慮してcurrentCustomerDataから優先取得）
+    const dealerInfo = currentCustomerData?.dealer_info || document.getElementById('dealer-info').value.trim();
     
-    if (customerName) {
-        summaryText += `**顧客名:** ${customerName}様\n\n`;
-    }
-    
-    if (customerDetails) {
-        summaryText += `**顧客詳細:**\n${customerDetails}\n\n`;
-    }
+    // 統合マークダウンを生成
+    const combinedMarkdown = generateCombinedMarkdown(customerName, customerDetails, dealerInfo, currentProposals.proposal_1, currentProposals.proposal_2);
     
     // クリップボードにコピー
-    navigator.clipboard.writeText(summaryText).then(() => {
-        showNotification('顧客情報をコピーしました', 'success');
+    navigator.clipboard.writeText(combinedMarkdown).then(() => {
+        showNotification('顧客情報と全提案をコピーしました', 'success');
     }).catch(err => {
         console.error('コピーに失敗しました:', err);
         showNotification('コピーに失敗しました', 'error');
@@ -1451,59 +1650,89 @@ function copyCustomerSummary() {
 }
 
 /**
- * 提案内容をマークダウン形式でクリップボードにコピーする
+ * 統合マークダウンを生成する
+ * @param {string} customerName - 顧客名
+ * @param {string} customerDetails - 顧客詳細情報
+ * @param {string} dealerInfo - 販売店情報
+ * @param {Object} proposal1 - 提案①
+ * @param {Object} proposal2 - 提案②
+ * @returns {string} 統合マークダウン
  */
-function copyProposalAsMarkdown() {
-    if (!currentProposal || !currentProposal.proposal) {
-        showNotification('コピーする提案内容がありません', 'warning');
-        return;
+function generateCombinedMarkdown(customerName, customerDetails, dealerInfo, proposal1, proposal2) {
+    let markdown = `# ${customerName}様 提案書\n\n`;
+    
+    // 顧客情報セクション
+    markdown += `## 顧客情報\n`;
+    markdown += `**顧客名:** ${customerName}様\n\n`;
+    if (customerDetails) {
+        markdown += `**顧客詳細:**\n${customerDetails}\n\n`;
     }
     
-    const p = currentProposal.proposal;
-    let markdownText = `# ${currentCustomerData?.customer_name || '顧客'}様 提案内容\n\n`;
+    // 販売店情報セクション
+    if (dealerInfo) {
+        markdown += `## 販売店情報・キャンペーン\n${dealerInfo}\n\n`;
+    }
+    
+    // 提案①セクション
+    if (proposal1) {
+        markdown += `## 提案①\n\n`;
+        markdown += generateProposalSection(proposal1);
+        markdown += `\n`;
+    }
+    
+    // 提案②セクション
+    if (proposal2) {
+        markdown += `## 提案②\n\n`;
+        markdown += generateProposalSection(proposal2);
+        markdown += `\n`;
+    }
+    
+    return markdown;
+}
+
+/**
+ * 提案セクションのマークダウンを生成する
+ * @param {Object} proposal - 提案データ
+ * @returns {string} 提案セクションのマークダウン
+ */
+function generateProposalSection(proposal) {
+    let section = '';
     
     // 車種情報
-    if (p.car) {
-        markdownText += `## 提案車種\n\n`;
-        markdownText += `**モデル:** ${p.car.model || '未設定'}\n`;
-        markdownText += `**グレード:** ${p.car.grade || '未設定'}\n`;
-        markdownText += `**価格帯:** ${p.car.price || '未設定'}\n`;
-        markdownText += `**提案理由:** ${p.car.reason || '情報がありません'}\n\n`;
+    if (proposal.car) {
+        section += `### 提案車種\n`;
+        section += `**モデル:** ${proposal.car.model || '未設定'}\n`;
+        section += `**グレード:** ${proposal.car.grade || '未設定'}\n`;
+        section += `**価格帯:** ${proposal.car.price || '未設定'}\n`;
+        section += `**提案理由:** ${proposal.car.reason || '情報がありません'}\n\n`;
     }
     
     // 支払方法
-    if (p.payment) {
-        markdownText += `## 支払方法\n\n`;
-        markdownText += `**推奨方法:** ${p.payment.recommended_method || '未設定'}\n`;
-        markdownText += `**シミュレーション:** ${p.payment.simulation || '支払いシミュレーション情報がありません'}\n`;
-        markdownText += `**提案理由:** ${p.payment.reason || '情報がありません'}\n\n`;
+    if (proposal.payment) {
+        section += `### 支払方法\n`;
+        section += `**推奨方法:** ${proposal.payment.recommended_method || '未設定'}\n`;
+        section += `**シミュレーション:** ${proposal.payment.simulation || '支払いシミュレーション情報がありません'}\n`;
+        section += `**提案理由:** ${proposal.payment.reason || '情報がありません'}\n\n`;
     }
     
     // 購入時期
-    if (p.timing) {
-        markdownText += `## 購入時期\n\n`;
-        markdownText += `**推奨時期:** ${p.timing.recommended_date || '未設定'}\n`;
-        markdownText += `**提案理由:** ${p.timing.reason || '情報がありません'}\n\n`;
+    if (proposal.timing) {
+        section += `### 購入時期\n`;
+        section += `**推奨時期:** ${proposal.timing.recommended_date || '未設定'}\n`;
+        section += `**提案理由:** ${proposal.timing.reason || '情報がありません'}\n\n`;
     }
     
     // 下取り
-    if (p.trade_in) {
-        markdownText += `## 下取り\n\n`;
-        markdownText += `**現在の車:** ${p.trade_in.owned_car || '情報なし'}\n`;
-        markdownText += `**査定額:** ${p.trade_in.assesment || '未設定'}\n`;
-        markdownText += `**理由:** ${p.trade_in.reason || '情報がありません'}\n\n`;
+    if (proposal.trade_in) {
+        section += `### 下取り\n`;
+        section += `**現在の車:** ${proposal.trade_in.owned_car || '情報なし'}\n`;
+        section += `**査定額:** ${proposal.trade_in.assesment || '未設定'}\n`;
+        section += `**理由:** ${proposal.trade_in.reason || '情報がありません'}\n\n`;
     }
     
-    // クリップボードにコピー
-    navigator.clipboard.writeText(markdownText)
-        .then(() => {
-            showNotification('提案内容をマークダウン形式でコピーしました', 'success');
-        })
-        .catch(err => {
-            console.error('クリップボードへのコピーに失敗しました', err);
-            showNotification('コピーに失敗しました', 'error');
-        });
+    return section;
 }
+
 
 /**
  * テキスト整形処理

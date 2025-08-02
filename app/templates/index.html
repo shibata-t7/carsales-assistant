@@ -117,8 +117,8 @@
                 <div class="card">
                     <div class="card-header">
                         <h2><i class="fas fa-user-check"></i> 顧客情報サマリー</h2>
-                        <button id="copy-customer-summary-btn" class="btn btn-text" title="顧客情報をコピー">
-                            <i class="fas fa-copy"></i> コピー
+                        <button id="copy-customer-summary-btn" class="btn btn-text" title="顧客情報と全提案をコピー">
+                            <i class="fas fa-copy"></i> 全てコピー
                         </button>
                     </div>
                     <div class="card-body" id="customer-summary">
@@ -129,88 +129,172 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-car"></i> 提案内容</h2>
-                        <button id="copy-proposal-btn" class="btn btn-text" title="提案内容をマークダウン形式でコピー">
-                            <i class="fas fa-copy"></i> コピー
-                        </button>
+                <!-- デュアル提案コンテナ -->
+                <div class="dual-proposals-container">
+                    <!-- 提案1 -->
+                    <div class="proposal-card" id="proposal-card-1" data-proposal="proposal_1">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2><i class="fas fa-car"></i> 提案①</h2>
+                            </div>
+                            <div class="card-body">
+                                <!-- タブナビゲーション -->
+                                <ul class="proposal-tabs" id="proposal-tabs-1">
+                                    <li class="proposal-tab active" data-tab="car-tab-1">
+                                        <i class="fas fa-car-side"></i> 車種
+                                    </li>
+                                    <li class="proposal-tab" data-tab="payment-tab-1">
+                                        <i class="fas fa-yen-sign"></i> 支払方法
+                                    </li>
+                                    <li class="proposal-tab" data-tab="timing-tab-1">
+                                        <i class="fas fa-calendar-alt"></i> 購入時期
+                                    </li>
+                                    <li class="proposal-tab" data-tab="tradein-tab-1">
+                                        <i class="fas fa-exchange-alt"></i> 下取り
+                                    </li>
+                                </ul>
+
+                                <!-- タブコンテンツ -->
+                                <div class="tab-content" id="tab-content-1">
+                                    <!-- 車種タブ -->
+                                    <div id="car-tab-1" class="proposal-tab-content active">
+                                        <div class="proposal-header">
+                                            <h3 id="car-model-1"></h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <p><strong>グレード:</strong> <span id="car-grade-1"></span></p>
+                                            <p><strong>価格帯:</strong> <span id="car-price-1"></span></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="car-reason-1"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- 支払方法タブ -->
+                                    <div id="payment-tab-1" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3 id="payment-method-1"></h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <h4>支払シミュレーション:</h4>
+                                            <p id="payment-simulation-1"></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="payment-reason-1"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- 購入時期タブ -->
+                                    <div id="timing-tab-1" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3 id="recommended-timing-1"></h3>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="timing-reason-1"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- 下取りタブ -->
+                                    <div id="tradein-tab-1" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3>下取り</h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <p><strong>現在の車:</strong> <span id="tradein-car-1"></span></p>
+                                            <p><strong>査定額:</strong> <span id="tradein-price-1"></span></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>理由:</h4>
+                                            <div id="tradein-details-1"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <!-- タブナビゲーション -->
-                        <ul class="proposal-tabs">
-                            <li class="proposal-tab active" data-tab="car-tab">
-                                <i class="fas fa-car-side"></i> 車種
-                            </li>
-                            <li class="proposal-tab" data-tab="payment-tab">
-                                <i class="fas fa-yen-sign"></i> 支払方法
-                            </li>
-                            <li class="proposal-tab" data-tab="timing-tab">
-                                <i class="fas fa-calendar-alt"></i> 購入時期
-                            </li>
-                            <li class="proposal-tab" data-tab="tradein-tab">
-                                <i class="fas fa-exchange-alt"></i> 下取り
-                            </li>
-                        </ul>
 
-                        <!-- タブコンテンツ -->
-                        <div class="tab-content">
-                            <!-- 車種タブ -->
-                            <div id="car-tab" class="proposal-tab-content active">
-                                <div class="proposal-header">
-                                    <h3 id="car-model"></h3>
-                                </div>
-                                <div class="proposal-details">
-                                    <p><strong>グレード:</strong> <span id="car-grade"></span></p>
-                                    <p><strong>価格帯:</strong> <span id="car-price"></span></p>
-                                </div>
-                                <div class="proposal-reason">
-                                    <h4>提案理由:</h4>
-                                    <p id="car-reason">
-                                    </p>
-                                </div>
+                    <!-- 提案2 -->
+                    <div class="proposal-card" id="proposal-card-2" data-proposal="proposal_2">
+                        <div class="card">
+                            <div class="card-header">
+                                <h2><i class="fas fa-car"></i> 提案②</h2>
                             </div>
+                            <div class="card-body">
+                                <!-- タブナビゲーション -->
+                                <ul class="proposal-tabs" id="proposal-tabs-2">
+                                    <li class="proposal-tab active" data-tab="car-tab-2">
+                                        <i class="fas fa-car-side"></i> 車種
+                                    </li>
+                                    <li class="proposal-tab" data-tab="payment-tab-2">
+                                        <i class="fas fa-yen-sign"></i> 支払方法
+                                    </li>
+                                    <li class="proposal-tab" data-tab="timing-tab-2">
+                                        <i class="fas fa-calendar-alt"></i> 購入時期
+                                    </li>
+                                    <li class="proposal-tab" data-tab="tradein-tab-2">
+                                        <i class="fas fa-exchange-alt"></i> 下取り
+                                    </li>
+                                </ul>
 
-                            <!-- 支払方法タブ -->
-                            <div id="payment-tab" class="proposal-tab-content">
-                                <div class="proposal-header">
-                                    <h3 id="payment-method"></h3>
-                                </div>
-                                <div class="proposal-details">
-                                    <h4>支払シミュレーション:</h4>
-                                    <p id="payment-simulation"></p>
-                                </div>
-                                <div class="proposal-reason">
-                                    <h4>提案理由:</h4>
-                                    <p id="payment-reason">
-                                    </p>
-                                </div>
-                            </div>
+                                <!-- タブコンテンツ -->
+                                <div class="tab-content" id="tab-content-2">
+                                    <!-- 車種タブ -->
+                                    <div id="car-tab-2" class="proposal-tab-content active">
+                                        <div class="proposal-header">
+                                            <h3 id="car-model-2"></h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <p><strong>グレード:</strong> <span id="car-grade-2"></span></p>
+                                            <p><strong>価格帯:</strong> <span id="car-price-2"></span></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="car-reason-2"></p>
+                                        </div>
+                                    </div>
 
-                            <!-- 購入時期タブ -->
-                            <div id="timing-tab" class="proposal-tab-content">
-                                <div class="proposal-header">
-                                    <h3 id="recommended-timing"></h3>
-                                </div>
-                                <div class="proposal-reason">
-                                    <h4>提案理由:</h4>
-                                    <p id="timing-reason">
-                                    </p>
-                                </div>
-                            </div>
+                                    <!-- 支払方法タブ -->
+                                    <div id="payment-tab-2" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3 id="payment-method-2"></h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <h4>支払シミュレーション:</h4>
+                                            <p id="payment-simulation-2"></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="payment-reason-2"></p>
+                                        </div>
+                                    </div>
 
-                            <!-- 下取りタブ -->
-                            <div id="tradein-tab" class="proposal-tab-content">
-                                <div class="proposal-header">
-                                    <h3>下取り</h3>
-                                </div>
-                                <div class="proposal-details">
-                                    <p><strong>現在の車:</strong> <span id="tradein-car"></span></p>
-                                    <p><strong>査定額:</strong> <span id="tradein-price"></span></p>
-                                </div>
-                                <div class="proposal-reason">
-                                    <h4>理由:</h4>
-                                    <div id="tradein-details">
+                                    <!-- 購入時期タブ -->
+                                    <div id="timing-tab-2" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3 id="recommended-timing-2"></h3>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>提案理由:</h4>
+                                            <p id="timing-reason-2"></p>
+                                        </div>
+                                    </div>
+
+                                    <!-- 下取りタブ -->
+                                    <div id="tradein-tab-2" class="proposal-tab-content">
+                                        <div class="proposal-header">
+                                            <h3>下取り</h3>
+                                        </div>
+                                        <div class="proposal-details">
+                                            <p><strong>現在の車:</strong> <span id="tradein-car-2"></span></p>
+                                            <p><strong>査定額:</strong> <span id="tradein-price-2"></span></p>
+                                        </div>
+                                        <div class="proposal-reason">
+                                            <h4>理由:</h4>
+                                            <div id="tradein-details-2"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -226,6 +310,16 @@
                         </button>
                     </div>
                     <div class="card-body">
+                        <!-- 提案選択タブ -->
+                        <div class="faq-proposal-tabs">
+                            <button class="faq-tab-btn active" data-proposal="proposal_1">
+                                <i class="fas fa-car"></i> 提案①のFAQ
+                            </button>
+                            <button class="faq-tab-btn" data-proposal="proposal_2">
+                                <i class="fas fa-car"></i> 提案②のFAQ
+                            </button>
+                        </div>
+                        
                         <div class="qa-accordion" id="faq-items">
                             <!-- FAQアイテムは動的に挿入される -->
                         </div>
@@ -243,11 +337,21 @@
                         </button>
                     </div>
                     <div class="card-body">
+                        <!-- 提案選択タブ -->
+                        <div class="qa-proposal-tabs">
+                            <button class="qa-tab-btn active" data-proposal="proposal_1">
+                                <i class="fas fa-car"></i> 提案①への質問
+                            </button>
+                            <button class="qa-tab-btn" data-proposal="proposal_2">
+                                <i class="fas fa-car"></i> 提案②への質問
+                            </button>
+                        </div>
+                        
                         <div id="qa-responses" class="qa-responses">
                             <!-- 質問と回答が動的に追加される場所 -->
                         </div>
                         <div class="qa-input">
-                            <input type="text" id="qa-question" placeholder="この提案について質問があれば入力してください">
+                            <input type="text" id="qa-question" placeholder="選択した提案について質問があれば入力してください">
                             <button id="qa-submit" class="btn btn-secondary">質問する</button>
                         </div>
                     </div>
@@ -393,11 +497,8 @@
                             <p><strong>顧客タイプ:</strong> <span id="detail-customer-type"></span></p>
                             <p><strong>顧客情報:</strong> <span id="detail-customer-info"></span></p>
                             <div class="history-detail-actions">
-                                <button id="show-proposal-again-btn" class="btn btn-secondary">
-                                    <i class="fas fa-lightbulb"></i> 提案内容を再表示
-                                </button>
-                                <button id="use-for-new-proposal-btn" class="btn btn-secondary">
-                                    <i class="fas fa-copy"></i> 新規提案に利用
+                                <button id="restore-from-history-btn" class="btn btn-primary">
+                                    <i class="fas fa-history"></i> 履歴から復元
                                 </button>
                             </div>
                         </div>
