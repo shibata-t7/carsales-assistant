@@ -1,0 +1,10 @@
+メモ.txt
+app/__pycache__/
+doc/
+design/
+aws-test/
+app/instance/*.db
+.env
+venv/
+*.log
+.DS_Store
