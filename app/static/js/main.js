@@ -876,7 +876,17 @@ function displaySingleProposal(proposal, suffix) {
     // 下取りの情報を表示
     if (proposal.trade_in) {
         document.getElementById(`tradein-car-${suffix}`).textContent = proposal.trade_in.owned_car || '情報なし';
-        document.getElementById(`tradein-price-${suffix}`).textContent = proposal.trade_in.assesment || '未設定';
+        document.getElementById(`tradein-assessment-${suffix}`).textContent = proposal.trade_in.assessment_price || '未設定';
+        
+        // 査定サイトURLの処理
+        const urlElement = document.getElementById(`tradein-url-${suffix}`);
+        if (proposal.trade_in.url && proposal.trade_in.url.trim() !== '') {
+            urlElement.href = proposal.trade_in.url;
+            urlElement.style.display = 'inline';
+        } else {
+            urlElement.style.display = 'none';
+        }
+        
         document.getElementById(`tradein-details-${suffix}`).innerHTML = `
             <ul>
                 <li>${proposal.trade_in.reason?.split('。')[0] || '情報がありません'}</li>
@@ -1128,25 +1138,23 @@ function handleGenerateSalesTalk() {
 function displaySalesTalk(salestalk) {
     const salesTalkContent = document.getElementById('salestalk-content');
     
-    if (!salestalk || (!salestalk.messages && !salestalk.key_points)) {
+    if (!salestalk || (!salestalk.scenario && !salestalk.messages && !salestalk.key_points)) {
         salesTalkContent.innerHTML = '<p class="text-muted">セールストークの生成に失敗しました。</p>';
         return;
     }
     
     let html = '';
     
-    // キーポイントがある場合は表示
-    if (salestalk.key_points && Array.isArray(salestalk.key_points)) {
-        html += '<div class="sales-talk-section"><h3>会話の要点</h3><ul>';
-        salestalk.key_points.forEach(point => {
-            html += `<li>${point}</li>`;
-        });
-        html += '</ul></div>';
+    // 1. scenario（前提）を最初に表示
+    if (salestalk.scenario) {
+        html += '<div class="sales-talk-section"><h3>セールストークの前提</h3>';
+        const formattedScenario = salestalk.scenario.replace(/\n/g, '<br>');
+        html += `<p>${formattedScenario}</p></div>`;
     }
     
-    // 会話内容を表示
+    // 2. 会話内容（対話）を表示
     if (salestalk.messages && Array.isArray(salestalk.messages)) {
-        html += '<div class="sales-talk-section"><h3>会話内容</h3>';
+        html += '<div class="sales-talk-section"><h3>対話</h3>';
         
         let prevRole = null;
         
@@ -1178,6 +1186,15 @@ function displaySalesTalk(salestalk) {
         });
         
         html += '</div>';
+    }
+    
+    // 3. キーポイント（まとめ）を最後に表示
+    if (salestalk.key_points && Array.isArray(salestalk.key_points)) {
+        html += '<div class="sales-talk-section"><h3>まとめ</h3><ul>';
+        salestalk.key_points.forEach(point => {
+            html += `<li>${point}</li>`;
+        });
+        html += '</ul></div>';
     }
     
     // 次のステップがある場合は表示

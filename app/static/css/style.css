@@ -677,6 +677,17 @@ textarea {
     color: var(--white);
 }
 
+/* FAQ用のQ・Aアイコンスタイル */
+.qa-accordion-header .qa-badge {
+    background-color: var(--toyota-dark-blue);
+    color: var(--white);
+}
+
+.qa-accordion-content .qa-badge {
+    background-color: var(--toyota-red);
+    color: var(--white);
+}
+
 .qa-input {
     display: flex;
     margin-top: var(--spacing-l);
@@ -735,6 +746,148 @@ textarea {
     padding: var(--spacing-l);
     margin-bottom: var(--spacing-m);
     border-radius: 0 var(--border-radius-medium) var(--border-radius-medium) 0;
+}
+
+/* セールストークセクション */
+.sales-talk-section {
+    margin-bottom: 2rem;
+    padding: 0;
+    background: transparent;
+}
+
+.sales-talk-section:last-of-type {
+    margin-bottom: 1.5rem;
+}
+
+.sales-talk-section h3 {
+    color: var(--gray-900);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    padding: 0;
+    border: none;
+    letter-spacing: -0.025em;
+}
+
+.sales-talk-section p {
+    line-height: 1.7;
+    margin: 0 0 1rem 0;
+    color: var(--gray-700);
+    font-size: 0.95rem;
+}
+
+/* 対話セクション */
+.sales-talk-customer, .sales-talk-sales, .sales-talk-other {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+}
+
+.sales-talk-customer {
+    margin-left: 0;
+    margin-right: 2rem;
+    border-left: 3px solid #3B82F6;
+}
+
+.sales-talk-sales {
+    margin-left: 2rem;
+    margin-right: 0;
+    border-left: 3px solid #6B7280;
+}
+
+.sales-talk-customer strong, .sales-talk-sales strong {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.sales-talk-customer p, .sales-talk-sales p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--gray-800);
+    font-size: 0.95rem;
+}
+
+/* リストスタイル */
+.sales-talk-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    space-y: 0.75rem;
+}
+
+.sales-talk-section li {
+    position: relative;
+    padding: 0.5rem 0 0.5rem 1.75rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    color: var(--gray-700);
+    font-size: 0.95rem;
+}
+
+.sales-talk-section li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    color: var(--gray-400);
+    font-weight: bold;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+/* 番号付きリスト */
+.sales-talk-section ol {
+    counter-reset: step-counter;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sales-talk-section ol li {
+    counter-increment: step-counter;
+    position: relative;
+    padding: 0.5rem 0 0.5rem 1.75rem;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.sales-talk-section ol li:before {
+    content: counter(step-counter) ".";
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    color: var(--gray-500);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* レスポンシブ対応：セールストーク */
+@media (max-width: 768px) {
+    .sales-talk-customer {
+        margin-left: 0;
+        margin-right: 0.5rem;
+    }
+    
+    .sales-talk-sales {
+        margin-left: 0.5rem;
+        margin-right: 0;
+    }
+    
+    .sales-talk-section h3 {
+        font-size: 1rem;
+    }
+    
+    .sales-talk-section li {
+        padding-left: 1.5rem;
+        font-size: 0.9rem;
+    }
 }
 
 /* ロールプレイボタン */
@@ -1125,6 +1278,7 @@ textarea {
     font-weight: 500;
     color: var(--gray-700);
     transition: all var(--transition-quick);
+    font-size: 14px;
 }
 
 .proposal-tab i {
@@ -1418,5 +1572,13 @@ textarea {
     .qa-tab-btn {
         padding: var(--spacing-s);
         font-size: var(--font-size-small);
+    }
+}
+
+/* ノートパソコン画面対応（提案タブの文字サイズ調整） */
+@media (max-width: 1366px) {
+    .proposal-tab {
+        padding: var(--spacing-s) var(--spacing-m);
+        font-size: 13px;
     }
 } 
