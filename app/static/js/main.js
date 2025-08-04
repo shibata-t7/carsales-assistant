@@ -1148,20 +1148,20 @@ function displaySalesTalk(salestalk) {
     
     // 1. scenario（前提）を最初に表示
     if (salestalk.scenario) {
-        html += '<div class="sales-talk-section"><h3>セールストークの前提</h3>';
+        html += '<div class="sales-talk-section"><h3><i class="fas fa-info-circle"></i> セールストークの前提</h3>';
         const formattedScenario = salestalk.scenario.replace(/\n/g, '<br>');
-        html += `<p>${formattedScenario}</p></div>`;
+        html += `<div class="scenario-content"><p>${formattedScenario}</p></div></div>`;
     }
     
     // 2. 会話内容（対話）を表示
     if (salestalk.messages && Array.isArray(salestalk.messages)) {
-        html += '<div class="sales-talk-section"><h3>対話</h3>';
-        
-        let prevRole = null;
+        html += '<div class="sales-talk-section"><h3><i class="fas fa-comments"></i> 対話</h3>';
+        html += '<div class="conversation-container">';
         
         salestalk.messages.forEach(msg => {
             const role = msg.role || '';
             const content = msg.content || '';
+            const thought = msg.thought || '';
             
             // 対話ポイント（解説）の場合は別形式で表示
             if (role === 'sales' && content.startsWith('[対話ポイント]')) {
@@ -1170,28 +1170,33 @@ function displaySalesTalk(salestalk) {
             }
             
             // 通常の会話の場合
-            if (role !== prevRole) {
-                if (role === 'customer') {
-                    html += '<div class="sales-talk-customer"><strong>【お客様】</strong>';
-                } else if (role === 'sales') {
-                    html += '<div class="sales-talk-sales"><strong>【営業担当】</strong>';
-                } else {
-                    html += `<div class="sales-talk-other"><strong>【${role}】</strong>`;
-                }
-            } else {
-                html += '<div>';
-            }
+            const isCustomer = role === 'customer';
+            const roleIcon = isCustomer ? 'fas fa-user' : 'fas fa-user-tie';
+            const roleLabel = isCustomer ? 'お客様' : '営業担当';
+            const messageClass = isCustomer ? 'conversation-message customer' : 'conversation-message sales';
             
-            html += `<p>${content}</p></div>`;
-            prevRole = role;
+            html += `
+                <div class="${messageClass}">
+                    <div class="message-header">
+                        <div class="message-info">
+                            <i class="${roleIcon}"></i>
+                            <span class="role-label">${roleLabel}</span>
+                        </div>
+                    </div>
+                    <div class="message-content">
+                        <p>${content}</p>
+                    </div>
+                    ${thought && !isCustomer ? `<div class="message-thought"><i class="fas fa-lightbulb"></i><span>ワンポイント思考</span><p>${thought}</p></div>` : ''}
+                </div>
+            `;
         });
         
-        html += '</div>';
+        html += '</div></div>';
     }
     
     // 3. キーポイント（まとめ）を最後に表示
     if (salestalk.key_points && Array.isArray(salestalk.key_points)) {
-        html += '<div class="sales-talk-section"><h3>まとめ</h3><ul>';
+        html += '<div class="sales-talk-section"><h3><i class="fas fa-lightbulb"></i> まとめ</h3><ul>';
         salestalk.key_points.forEach(point => {
             html += `<li>${point}</li>`;
         });
@@ -1200,7 +1205,7 @@ function displaySalesTalk(salestalk) {
     
     // 次のステップがある場合は表示
     if (salestalk.next_steps && Array.isArray(salestalk.next_steps)) {
-        html += '<div class="sales-talk-section"><h3>次のステップ</h3><ol>';
+        html += '<div class="sales-talk-section"><h3><i class="fas fa-arrow-right"></i> 次のステップ</h3><ol>';
         salestalk.next_steps.forEach(step => {
             html += `<li>${step}</li>`;
         });

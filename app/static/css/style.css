@@ -752,7 +752,6 @@ textarea {
 .sales-talk-section {
     margin-bottom: 2rem;
     padding: 0;
-    background: transparent;
 }
 
 .sales-talk-section:last-of-type {
@@ -760,13 +759,20 @@ textarea {
 }
 
 .sales-talk-section h3 {
-    color: var(--gray-900);
-    font-size: 1.125rem;
+    color: var(--toyota-dark-blue);
+    font-size: 1.25rem;
     font-weight: 600;
-    margin: 0 0 1rem 0;
-    padding: 0;
-    border: none;
+    margin: 0 0 1.5rem 0;
+    padding: 0.75rem 0;
+    border-bottom: 2px solid var(--gray-200);
     letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sales-talk-section h3 i {
+    color: var(--toyota-red);
 }
 
 .sales-talk-section p {
@@ -776,42 +782,118 @@ textarea {
     font-size: 0.95rem;
 }
 
-/* 対話セクション */
-.sales-talk-customer, .sales-talk-sales, .sales-talk-other {
-    margin: 1.5rem 0;
-    padding: 1rem 1.25rem;
-    border-radius: 8px;
-    border: 1px solid var(--gray-200);
+/* 前提セクション */
+.scenario-content {
     background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.sales-talk-customer {
-    margin-left: 0;
-    margin-right: 2rem;
-    border-left: 3px solid #3B82F6;
-}
-
-.sales-talk-sales {
-    margin-left: 2rem;
-    margin-right: 0;
-    border-left: 3px solid #6B7280;
-}
-
-.sales-talk-customer strong, .sales-talk-sales strong {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: var(--gray-500);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.sales-talk-customer p, .sales-talk-sales p {
+.scenario-content p {
     margin: 0;
-    line-height: 1.6;
+    color: var(--gray-800);
+    line-height: 1.7;
+}
+
+/* 対話コンテナ */
+.conversation-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* 対話メッセージ */
+.conversation-message {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+/* 営業発言の背景 */
+.conversation-message.sales {
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+}
+
+.conversation-message:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* メッセージヘッダー */
+.message-header {
+    padding: 1rem 1.25rem 0.75rem;
+    background: var(--gray-50);
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.message-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.message-info i {
+    font-size: 1.1rem;
+    color: var(--gray-600);
+}
+
+.conversation-message.customer .message-info i {
+    color: var(--toyota-light-blue);
+}
+
+.conversation-message.sales .message-info i {
+    color: var(--toyota-red);
+}
+
+.role-label {
+    font-weight: 600;
+    color: var(--gray-800);
+    font-size: 0.9rem;
+}
+
+/* メッセージコンテンツ */
+.message-content {
+    padding: 1.25rem;
+}
+
+.message-content p {
+    margin: 0;
+    line-height: 1.7;
     color: var(--gray-800);
     font-size: 0.95rem;
+}
+
+/* 思考プロセス */
+.message-thought {
+    background: linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);
+    border-top: 1px solid var(--toyota-light-blue);
+    padding: 1rem 1.25rem;
+    margin: 0;
+}
+
+.message-thought i {
+    color: var(--toyota-red);
+    margin-right: 0.5rem;
+}
+
+.message-thought span {
+    font-weight: 600;
+    color: var(--toyota-red);
+    font-size: 0.875rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.message-thought p {
+    margin: 0;
+    color: var(--gray-700);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    font-style: italic;
 }
 
 /* リストスタイル */
@@ -819,27 +901,36 @@ textarea {
     list-style: none;
     padding: 0;
     margin: 0;
-    space-y: 0.75rem;
 }
 
 .sales-talk-section li {
     position: relative;
-    padding: 0.5rem 0 0.5rem 1.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0.75rem 0 0.75rem 2rem;
+    margin-bottom: 0.5rem;
     line-height: 1.6;
     color: var(--gray-700);
     font-size: 0.95rem;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .sales-talk-section li:before {
-    content: "•";
+    content: "✓";
     position: absolute;
-    left: 0;
-    top: 0.5rem;
-    color: var(--gray-400);
+    left: 0.75rem;
+    top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--toyota-light-blue);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 0.75rem;
     font-weight: bold;
-    font-size: 1.25rem;
-    line-height: 1;
 }
 
 /* 番号付きリスト */
@@ -853,40 +944,77 @@ textarea {
 .sales-talk-section ol li {
     counter-increment: step-counter;
     position: relative;
-    padding: 0.5rem 0 0.5rem 1.75rem;
-    margin-bottom: 0.75rem;
+    padding: 0.75rem 0 0.75rem 2rem;
+    margin-bottom: 0.5rem;
     line-height: 1.6;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .sales-talk-section ol li:before {
-    content: counter(step-counter) ".";
+    content: counter(step-counter);
     position: absolute;
-    left: 0;
-    top: 0.5rem;
-    color: var(--gray-500);
-    font-weight: 600;
-    font-size: 0.95rem;
+    left: 0.75rem;
+    top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: var(--toyota-red);
+    color: var(--white);
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: bold;
 }
 
 /* レスポンシブ対応：セールストーク */
 @media (max-width: 768px) {
-    .sales-talk-customer {
-        margin-left: 0;
-        margin-right: 0.5rem;
+    .conversation-container {
+        gap: 0.75rem;
     }
     
-    .sales-talk-sales {
-        margin-left: 0.5rem;
-        margin-right: 0;
+    .conversation-message {
+        border-radius: 8px;
+    }
+    
+    .message-header {
+        padding: 0.75rem 1rem 0.5rem;
+    }
+    
+    .message-content {
+        padding: 1rem;
+    }
+    
+    .message-content p {
+        font-size: 0.9rem;
+    }
+    
+    .message-thought {
+        padding: 0.75rem 1rem;
+    }
+    
+    .message-thought p {
+        font-size: 0.8rem;
     }
     
     .sales-talk-section h3 {
-        font-size: 1rem;
+        font-size: 1.125rem;
     }
     
     .sales-talk-section li {
-        padding-left: 1.5rem;
+        padding: 0.5rem 0 0.5rem 1.75rem;
         font-size: 0.9rem;
+    }
+    
+    .sales-talk-section li:before {
+        width: 18px;
+        height: 18px;
+        left: 0.5rem;
+        top: 0.5rem;
+        font-size: 0.7rem;
     }
 }
 
