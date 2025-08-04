@@ -857,6 +857,7 @@ function displaySingleProposal(proposal, suffix) {
         document.getElementById(`car-model-${suffix}`).textContent = proposal.car.model || '未設定';
         document.getElementById(`car-grade-${suffix}`).textContent = proposal.car.grade || '未設定';
         document.getElementById(`car-price-${suffix}`).textContent = proposal.car.price || '未設定';
+        document.getElementById(`car-shipping-${suffix}`).textContent = proposal.car.shipping_date || '未定';
         document.getElementById(`car-reason-${suffix}`).textContent = proposal.car.reason || '情報がありません';
     }
     
